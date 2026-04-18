@@ -1,0 +1,30 @@
+# External source drops and notes used only for research — never committed.
+.research/
+
+# Node
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Next
+.next/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Local SQLite data — every deployment / developer has their own
+data/*.db
+data/*.db-shm
+data/*.db-wal

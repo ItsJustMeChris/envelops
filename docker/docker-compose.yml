@@ -1,0 +1,33 @@
+services:
+  osops:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    environment:
+      OSOPS_MASTER_KEY: ${OSOPS_MASTER_KEY:?generate with: openssl rand -hex 32}
+      OSOPS_BASE_URL: ${OSOPS_BASE_URL:-http://localhost:3000}
+      DATABASE_URL: file:/data/osops.db
+    volumes:
+      - osops-data:/data
+    ports:
+      - "3000:3000"
+
+  # Optional: reverse proxy for automatic TLS. Enable with `--profile tls`.
+  caddy:
+    profiles: ["tls"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [osops]
+
+volumes:
+  osops-data:
+  caddy-data:
+  caddy-config:

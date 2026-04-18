@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1776537680760,
+      "tag": "0000_perfect_big_bertha",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1776537799283,
+      "tag": "0001_gorgeous_proteus",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776538275750,
+      "tag": "0002_large_argent",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1776538689907,
+      "tag": "0003_adorable_moon_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1776543433177,
+      "tag": "0004_orange_silvermane",
+      "breakpoints": true
+    }
+  ]
+}

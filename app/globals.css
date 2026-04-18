@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  background: theme('colors.bg');
+  color: theme('colors.fg');
+  font-family: theme('fontFamily.mono');
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+a { text-decoration: underline; text-underline-offset: 3px; }
+a:hover { color: theme('colors.accent'); }
+
+/* Horizontal rule mimicking Ops panel dashed separators. */
+.rule {
+  position: relative;
+  height: 1px;
+  background-image: linear-gradient(to right, theme('colors.rule') 50%, transparent 0%);
+  background-size: 12px 1px;
+  background-repeat: repeat-x;
+}
+
+/* Vertical rule used in the panel's sidebar divider. */
+.vrule {
+  width: 1px;
+  background-image: linear-gradient(theme('colors.rule') 50%, transparent 0%);
+  background-size: 1px 8px;
+  background-repeat: repeat-y;
+}
