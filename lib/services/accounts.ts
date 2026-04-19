@@ -42,16 +42,23 @@ export async function findOrCreateAccountByEmail(email: string): Promise<Account
     .returning()
 
   const account = inserted[0]
+  await ensurePersonalOrg(account)
+  return account
+}
 
-  // Every account gets a personal org matching their username.
+export async function ensurePersonalOrg(account: Account): Promise<void> {
+  const { db } = getDb()
+  const anyMembership = await db.query.memberships.findFirst({
+    where: eq(memberships.accountId, account.id)
+  })
+  if (anyMembership) return
+
   const slug = await uniqueSlug(db, account.username)
   const orgRow = await db
     .insert(organizations)
-    .values({ slug, name: account.username, contactEmail: normalized, provider: 'manual' })
+    .values({ slug, name: account.username, contactEmail: account.email, provider: 'manual' })
     .returning()
   await db.insert(memberships).values({ accountId: account.id, orgId: orgRow[0].id, role: 'owner' })
-
-  return account
 }
 
 export async function listAccountOrganizations(
