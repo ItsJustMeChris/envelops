@@ -4,9 +4,10 @@ import { cookies } from 'next/headers'
 import { baseUrl } from '../config'
 import { getDb } from '../db/client'
 import { accounts, type Account } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { isSafeLocalPath } from '../http/safe-redirect'
 import { ensurePersonalOrg } from './accounts'
+import { firstAvailableSlug } from './funky-name'
 import { issueSession } from './panel-auth'
 
 const STATE_COOKIE = 'envelops_osops_gh_state'
@@ -116,7 +117,18 @@ export async function upsertFromGithub(input: {
   const { db } = getDb()
   const email = input.primaryEmail.toLowerCase()
   const existing = await db.query.accounts.findFirst({ where: eq(accounts.email, email) })
-  const username = input.user.login
+  // GitHub login can collide with another account that already squats it (a
+  // local-provider signup, or a renamed GitHub account). Treat that as a normal
+  // collision and fall back to a funky 2-word handle rather than crashing on
+  // the unique constraint.
+  const username = await firstAvailableSlug(input.user.login, async (candidate) => {
+    const hit = await db.query.accounts.findFirst({
+      where: existing
+        ? and(eq(accounts.username, candidate), ne(accounts.id, existing.id))
+        : eq(accounts.username, candidate)
+    })
+    return Boolean(hit)
+  })
   const fullUsername = `gh/${username}`
 
   const account = existing

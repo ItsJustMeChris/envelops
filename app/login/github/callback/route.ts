@@ -30,8 +30,8 @@ export async function GET(req: Request) {
     const identity = await fetchGithubIdentity(token)
     const account = await upsertFromGithub(identity)
     await completeSessionForAccount(account.id)
-  } catch (e) {
-    return NextResponse.redirect(new URL(`/login?err=${encodeURIComponent((e as Error).message)}`, baseUrl()))
+  } catch {
+    return NextResponse.redirect(new URL('/login?err=oauth_failed', baseUrl()))
   }
 
   return NextResponse.redirect(new URL(validated.nextPath, baseUrl()))

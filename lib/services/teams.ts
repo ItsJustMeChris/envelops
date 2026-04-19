@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm'
 
 import { getDb } from '../db/client'
 import { accounts, memberships, organizations } from '../db/schema'
+import { firstAvailableSlug } from './funky-name'
 
 /**
  * Return the caller's personal org — the one seeded at account creation with
@@ -30,13 +31,12 @@ export async function personalOrgForAccount(accountId: number): Promise<number> 
     .limit(1)
   if (hit[0]) return hit[0].orgId
 
-  let slug = account.username
-  let suffix = 1
-  while (
-    await db.query.organizations.findFirst({ where: eq(organizations.slug, slug) })
-  ) {
-    slug = `${account.username}-${++suffix}`
-  }
+  const slug = await firstAvailableSlug(account.username, async (candidate) => {
+    const hit = await db.query.organizations.findFirst({
+      where: eq(organizations.slug, candidate)
+    })
+    return Boolean(hit)
+  })
   const inserted = await db
     .insert(organizations)
     .values({

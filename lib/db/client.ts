@@ -1,5 +1,5 @@
 import { mkdirSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 
@@ -12,7 +12,14 @@ const FILE_URL_RE = /^file:/
 function resolveDbPath(raw: string | undefined): string {
   const value = raw && raw.length > 0 ? raw : 'file:./data/osops.db'
   const path = value.replace(FILE_URL_RE, '')
-  return resolve(process.cwd(), path)
+  if (isAbsolute(path)) return resolve(path)
+  const cwd = process.cwd()
+  const resolved = resolve(cwd, path)
+  const rel = relative(cwd, resolved)
+  if (rel.startsWith('..') || isAbsolute(rel)) {
+    throw new Error('DATABASE_URL relative path escapes working directory')
+  }
+  return resolved
 }
 
 let cached: { db: DrizzleDB; sqlite: Database.Database } | null = null

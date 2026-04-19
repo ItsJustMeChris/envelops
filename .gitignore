@@ -28,3 +28,5 @@ build/
 data/*.db
 data/*.db-shm
 data/*.db-wal
+
+data/*
