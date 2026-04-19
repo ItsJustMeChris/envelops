@@ -6,9 +6,9 @@
 // This is the ONLY test that covers the seam between the two commercial CLIs and our server.
 // Everything else stops at the ops binary boundary.
 //
-// Precondition: a dev server is running at $OSOPS_TEST_PORT (default 3100) with the same
+// Precondition: a dev server is running at $ENVELOPS_TEST_PORT (default 3100) with the same
 // data/ DB this test process opens. Run with:
-//   OSOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
+//   ENVELOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
 //   npx vitest run -c vitest.e2e.config.ts test/armor.test.ts
 
 import { execFile, spawn } from 'node:child_process'
@@ -27,7 +27,7 @@ const execFileP = promisify(execFile)
 
 const OPS_BIN = 'dotenvx-ops'
 const DOTENVX_BIN = 'dotenvx'
-const PORT = process.env.OSOPS_TEST_PORT ?? '3100'
+const PORT = process.env.ENVELOPS_TEST_PORT ?? '3100'
 const BASE = `http://127.0.0.1:${PORT}`
 
 async function waitForServer(url: string, attempts = 60): Promise<void> {

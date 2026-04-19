@@ -1,4 +1,4 @@
-{$OSOPS_PUBLIC_HOST:ops.example.com} {
+{$ENVELOPS_PUBLIC_HOST:ops.example.com} {
   reverse_proxy osops:3000
   encode zstd gzip
 }

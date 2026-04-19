@@ -3,8 +3,8 @@ set -e
 
 mkdir -p /data
 
-if [ -z "$OSOPS_MASTER_KEY" ]; then
-  echo "[osops] OSOPS_MASTER_KEY is not set. Refusing to boot in production mode."
+if [ -z "$ENVELOPS_MASTER_KEY" ]; then
+  echo "[osops] ENVELOPS_MASTER_KEY is not set. Refusing to boot in production mode."
   echo "[osops] Generate one with: openssl rand -hex 32"
   exit 1
 fi

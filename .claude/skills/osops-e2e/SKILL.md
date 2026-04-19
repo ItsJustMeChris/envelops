@@ -26,7 +26,7 @@ If `dotenvx-ops status` returns `off`, `dotenvx encrypt` silently falls back to 
    ```
 2. **Server running** on port 3100 with its migrations applied. Default harness:
    ```sh
-   OSOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
+   ENVELOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
    ```
    Wait for `http://127.0.0.1:3100/` to 200 before proceeding.
 
@@ -35,7 +35,7 @@ If `dotenvx-ops status` returns `off`, `dotenvx encrypt` silently falls back to 
 ## The fast path: run the vitest
 
 ```sh
-OSOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
+ENVELOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
 until curl -sf http://127.0.0.1:3100/ -o /dev/null; do sleep 0.3; done
 npx vitest run -c vitest.e2e.config.ts test/armor.test.ts
 ```

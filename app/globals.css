@@ -12,6 +12,19 @@ html, body {
   text-rendering: geometricPrecision;
 }
 
+/* Selection highlight: gold accent on near-black, matching the button focus state.
+   High contrast against cream-on-black body text; reads as "you grabbed that". */
+::selection {
+  background-color: theme('colors.accent');
+  color: theme('colors.bg');
+  text-shadow: none;
+}
+::-moz-selection {
+  background-color: theme('colors.accent');
+  color: theme('colors.bg');
+  text-shadow: none;
+}
+
 a { text-decoration: underline; text-underline-offset: 3px; }
 a:hover { color: theme('colors.accent'); }
 
@@ -30,4 +43,41 @@ a:hover { color: theme('colors.accent'); }
   background-image: linear-gradient(theme('colors.rule') 50%, transparent 0%);
   background-size: 1px 8px;
   background-repeat: repeat-y;
+}
+
+/* Styled <select> that matches the terminal aesthetic: no native chrome, a gold
+   chevron drawn in SVG, and dark-mode option popup. Compose with border/padding
+   utilities from the consuming element. */
+.select-terminal {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color-scheme: dark;
+  background-color: transparent;
+  color: theme('colors.fg');
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3.5 L5 7.5 L9 3.5' stroke='%23ffcc66' stroke-width='1.25' fill='none' stroke-linecap='square'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 10px 10px;
+  padding-right: 1.75rem;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.select-terminal:hover {
+  border-color: theme('colors.accent');
+}
+.select-terminal:focus {
+  outline: none;
+}
+/* Only show the accent treatment for keyboard focus so the select doesn't stay
+   "lit up" after a mouse click + selection. */
+.select-terminal:focus-visible,
+.select-terminal[aria-expanded="true"] {
+  border-color: theme('colors.accent');
+  color: theme('colors.accent');
+}
+.select-terminal option {
+  background-color: theme('colors.bg');
+  color: theme('colors.fg');
+  font-family: theme('fontFamily.mono');
 }

@@ -7,7 +7,7 @@ const crypto = require('node:crypto')
 
 // Co-exist with the commercial binary by using a distinct dir. Users switching over
 // intentionally log in again; we do not read the commercial settings file.
-const DIR = process.env.OSOPS_CLI_DIR || path.join(os.homedir(), '.envelops')
+const DIR = process.env.ENVELOPS_CLI_DIR || path.join(os.homedir(), '.envelops')
 const FILE = path.join(DIR, 'settings.json')
 
 function load() {

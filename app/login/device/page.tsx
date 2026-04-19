@@ -1,36 +1,20 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
 
 import { currentAccount } from '@/lib/services/panel-auth'
-import { approveDeviceCode, findPendingDeviceCodeByUserCode } from '@/lib/services/oauth'
+import { FlashCleanup } from '@/app/components/flash-cleanup'
+import { CodeForm } from './code-form'
+import { TerminalPrinter, type TerminalLine } from './terminal-printer'
 
 export const dynamic = 'force-dynamic'
-
-async function approve(formData: FormData) {
-  'use server'
-  const raw = String(formData.get('user_code') ?? '').trim().toUpperCase().replace(/-/g, '')
-  const account = await currentAccount()
-  if (!account) redirect(`/login?next=/login/device?user_code=${raw}`)
-  if (!raw) return
-
-  const pending = await findPendingDeviceCodeByUserCode(raw)
-  if (!pending) return
-  if (pending.expiresAt.getTime() < Date.now()) return
-  await approveDeviceCode(pending.id, account.id)
-  revalidatePath('/login/device')
-  redirect(`/login/device?ok=${raw}`)
-}
 
 export default async function DevicePage({
   searchParams
 }: {
-  searchParams: Promise<{ user_code?: string; ok?: string }>
+  searchParams: Promise<{ user_code?: string; ok?: string; err?: string; code?: string }>
 }) {
   const params = await searchParams
   const account = await currentAccount()
   const defaultCode = (params.user_code ?? '').toUpperCase().replace(/-/g, '')
-  const ok = params.ok
 
   if (!account) {
     return (
@@ -47,32 +31,93 @@ export default async function DevicePage({
     )
   }
 
+  // Success: terminal tape + continue button. No form.
+  if (params.ok) {
+    const code = params.ok.toUpperCase()
+    const formatted = formatCode(code)
+    const lines: TerminalLine[] = [
+      { text: `verifying user_code [${formatted}]... ok`, tone: 'ok' },
+      { text: `issuing device token for ${account.email}... ok`, tone: 'ok' },
+      { text: `device authorized.`, tone: 'ok' }
+    ]
+    return (
+      <main className="mx-auto max-w-xl px-6 py-16">
+        <h1 className="text-accent text-lg mb-4">authorize device</h1>
+        <div className="rule mb-6" />
+        <p className="text-dim mb-4">signed in as {account.email}</p>
+        <TerminalPrinter lines={lines} />
+        <p className="text-dim text-xs mt-4 mb-6">
+          return to your cli — it will finish logging in shortly.
+        </p>
+        <Link
+          href="/panel"
+          className="inline-block border border-accent text-accent px-4 py-2 hover:bg-accent/10"
+        >
+          continue to panel →
+        </Link>
+      </main>
+    )
+  }
+
+  // Denial: terminal failure tape + retry / continue. No form.
+  if (params.err && params.err !== 'empty') {
+    const code = (params.code ?? '').toUpperCase()
+    const formatted = code ? formatCode(code) : '—'
+    const reason =
+      params.err === 'expired'
+        ? 'code expired'
+        : params.err === 'invalid'
+          ? 'code invalid or already used'
+          : 'code rejected'
+    const lines: TerminalLine[] = [
+      { text: `verifying user_code [${formatted}]... FAIL`, tone: 'fail' },
+      { text: `device authorization denied: ${reason}.`, tone: 'fail' }
+    ]
+    return (
+      <main className="mx-auto max-w-xl px-6 py-16">
+        <h1 className="text-accent text-lg mb-4">authorize device</h1>
+        <div className="rule mb-6" />
+        <p className="text-dim mb-4">signed in as {account.email}</p>
+        <TerminalPrinter lines={lines} />
+        <p className="text-dim text-xs mt-4 mb-6">
+          ask your cli to restart the login flow — it will print a fresh code.
+        </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login/device"
+            className="inline-block border border-rule px-4 py-2 hover:border-accent hover:text-accent"
+          >
+            enter a different code
+          </Link>
+          <Link
+            href="/panel"
+            className="inline-block border border-accent text-accent px-4 py-2 hover:bg-accent/10"
+          >
+            continue to panel →
+          </Link>
+        </div>
+      </main>
+    )
+  }
+
+  // Idle: auto-submitting code form.
   return (
     <main className="mx-auto max-w-xl px-6 py-16">
+      <FlashCleanup keys={['err']} />
       <h1 className="text-accent text-lg mb-4">authorize device</h1>
       <div className="rule mb-6" />
       <p className="text-dim mb-2">signed in as {account.email}</p>
       <p className="mb-6">enter the device code shown in your cli output.</p>
 
-      {ok ? (
-        <p className="mb-6 text-accent">✔ approved [{ok}]. return to your cli — it will finish logging in shortly.</p>
+      {params.err === 'empty' ? (
+        <p className="text-red-400 mb-4">✘ code required.</p>
       ) : null}
 
-      <form action={approve} className="space-y-4">
-        <label className="block">
-          <span className="text-dim">user code</span>
-          <input
-            name="user_code"
-            defaultValue={defaultCode}
-            autoComplete="off"
-            placeholder="e.g. 64CD59D8"
-            className="mt-1 w-full bg-transparent border border-rule px-3 py-2 tracking-widest text-accent"
-          />
-        </label>
-        <button type="submit" className="border border-accent text-accent px-4 py-2 hover:bg-accent/10">
-          approve
-        </button>
-      </form>
+      <CodeForm defaultCode={defaultCode} />
     </main>
   )
+}
+
+function formatCode(code: string): string {
+  return code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code
 }

@@ -8,11 +8,13 @@ import {
 } from '@/lib/services/invites'
 import { currentAccount, requestLoginLink } from '@/lib/services/panel-auth'
 import { githubEnabled } from '@/lib/services/github-oauth'
+import { emailEnabled } from '@/lib/services/email'
 
 export const dynamic = 'force-dynamic'
 
 async function accept(formData: FormData) {
   'use server'
+  if (!emailEnabled()) redirect('/login')
   const token = String(formData.get('token') ?? '')
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   if (!token || !email) redirect('/login')
@@ -54,7 +56,7 @@ export default async function AcceptInvitePage({
   const subjectLabel = inviteSubjectLabel(invite)
   const mismatched = account != null
   const ghNext = `/invites/accept?token=${token}`
-  const emailAllowed = Boolean(invite.email)
+  const emailAllowed = Boolean(invite.email) && emailEnabled()
 
   return (
     <main className="mx-auto max-w-xl px-6 py-16">
@@ -95,8 +97,17 @@ export default async function AcceptInvitePage({
             accept by email
           </button>
         </form>
+      ) : invite.githubUsername || (invite.email && githubEnabled()) ? (
+        <p className="text-dim mb-6">
+          {invite.email && !emailEnabled()
+            ? 'email sign-in is disabled on this server. accept via github below (your github primary email must match).'
+            : 'this invite requires github. use the button below.'}
+        </p>
       ) : (
-        <p className="text-dim mb-6">this invite requires github. use the button below.</p>
+        <p className="text-dim mb-6">
+          no sign-in providers are configured on this server. ask an admin to enable email or
+          github before accepting.
+        </p>
       )}
 
       {githubEnabled() ? (

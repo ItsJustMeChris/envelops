@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { gcm } from '@noble/ciphers/aes'
 import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils'
 
-const ENV = 'OSOPS_MASTER_KEY'
+const ENV = 'ENVELOPS_MASTER_KEY'
 const KEY_LEN = 32
 
 function parse(raw: string): Uint8Array {

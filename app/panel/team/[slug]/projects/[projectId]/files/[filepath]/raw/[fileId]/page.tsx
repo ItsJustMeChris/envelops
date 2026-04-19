@@ -87,9 +87,7 @@ export default async function FileVersionMetaPage({
 
       <section>
         <h3 className="mb-2">contents</h3>
-        <pre className="bg-black/40 border border-rule px-3 py-2 text-xs whitespace-pre-wrap break-all">
-          {content}
-        </pre>
+        <pre className="border border-rule px-4 py-3 overflow-x-auto whitespace-pre-wrap break-all"><code>{content}</code></pre>
       </section>
 
       <section>
@@ -104,24 +102,22 @@ export default async function FileVersionMetaPage({
           )}
         </h3>
         {diff ? (
-          <pre className="bg-black/40 border border-rule px-3 py-2 text-xs whitespace-pre-wrap break-all">
-            {diff.map((line, i) => {
-              const prefix = line.op === 'add' ? '+ ' : line.op === 'del' ? '- ' : '  '
-              const cls =
-                line.op === 'add'
-                  ? 'text-accent'
-                  : line.op === 'del'
-                  ? 'text-dim line-through'
-                  : 'text-dim'
-              return (
-                <span key={i} className={cls}>
-                  {prefix}
-                  {line.text}
-                  {'\n'}
-                </span>
-              )
-            })}
-          </pre>
+          <pre className="border border-rule px-4 py-3 overflow-x-auto whitespace-pre-wrap break-all"><code>{diff.map((line, i) => {
+            const prefix = line.op === 'add' ? '+ ' : line.op === 'del' ? '- ' : '  '
+            const cls =
+              line.op === 'add'
+                ? 'text-accent'
+                : line.op === 'del'
+                ? 'text-dim line-through'
+                : 'text-dim'
+            return (
+              <span key={i} className={cls}>
+                {prefix}
+                {line.text}
+                {'\n'}
+              </span>
+            )
+          })}</code></pre>
         ) : (
           <p className="text-dim text-xs">ø no earlier version to compare against</p>
         )}
@@ -129,9 +125,7 @@ export default async function FileVersionMetaPage({
 
       <section>
         <h3 className="mb-2">fetch this version</h3>
-        <pre className="bg-black/40 border border-rule px-3 py-2 text-xs whitespace-pre-wrap">
-          dotenvx-ops get {file.envUri}
-        </pre>
+        <pre className="border border-rule px-4 py-3 overflow-x-auto"><code><span className="text-dim">$ </span>dotenvx-ops get <span className="text-accent">{file.envUri}</span></code></pre>
       </section>
     </div>
   )

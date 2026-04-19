@@ -10,7 +10,7 @@ import { issueSession } from './panel-auth'
 const STATE_COOKIE = 'osops_gh_state'
 
 export function githubEnabled(): boolean {
-  return Boolean(process.env.OSOPS_GITHUB_CLIENT_ID && process.env.OSOPS_GITHUB_CLIENT_SECRET)
+  return Boolean(process.env.ENVELOPS_GITHUB_CLIENT_ID && process.env.ENVELOPS_GITHUB_CLIENT_SECRET)
 }
 
 export async function buildAuthorizeUrl(nextPath: string): Promise<string> {
@@ -24,7 +24,7 @@ export async function buildAuthorizeUrl(nextPath: string): Promise<string> {
     maxAge: 600
   })
   const url = new URL('https://github.com/login/oauth/authorize')
-  url.searchParams.set('client_id', process.env.OSOPS_GITHUB_CLIENT_ID!)
+  url.searchParams.set('client_id', process.env.ENVELOPS_GITHUB_CLIENT_ID!)
   url.searchParams.set('redirect_uri', `${baseUrl()}/login/github/callback`)
   url.searchParams.set('scope', 'read:user read:org user:email')
   url.searchParams.set('state', state)
@@ -59,8 +59,8 @@ export async function exchangeCode(code: string): Promise<string> {
     method: 'POST',
     headers: { accept: 'application/json', 'content-type': 'application/json' },
     body: JSON.stringify({
-      client_id: process.env.OSOPS_GITHUB_CLIENT_ID,
-      client_secret: process.env.OSOPS_GITHUB_CLIENT_SECRET,
+      client_id: process.env.ENVELOPS_GITHUB_CLIENT_ID,
+      client_secret: process.env.ENVELOPS_GITHUB_CLIENT_SECRET,
       code,
       redirect_uri: `${baseUrl()}/login/github/callback`
     })

@@ -7,6 +7,7 @@ import { loginLinks, sessions, type Account } from '../db/schema'
 import { hashToken } from '../crypto/tokens'
 import { baseUrl } from '../config'
 import { findOrCreateAccountByEmail } from './accounts'
+import { emailEnabled, sendEmail } from './email'
 
 const SESSION_COOKIE = 'osops_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14 // 14 days
@@ -25,9 +26,19 @@ export async function requestLoginLink(email: string): Promise<{ url: string; ex
   })
 
   const url = `${baseUrl()}/login/verify?token=${plaintext}`
-  // Deliberate: no SMTP bundled. Operator reads server logs and forwards the link, or wires up
-  // their own mailer via a future OSOPS_SMTP_* pluggable. Keeps the OSS footprint tiny.
-  console.log(`[osops] login link for ${email}: ${url}`)
+  if (emailEnabled()) {
+    const result = await sendEmail({
+      to: email,
+      subject: 'Your envelops login link',
+      text: `Sign in to envelops:\n\n${url}\n\nThis link expires in 20 minutes. If you did not request it, ignore this email.`
+    })
+    if (!result.sent) {
+      // Fall back to logs so the operator can still recover the link if Mailgun rejects.
+      console.log(`[envelops] email send failed (${result.error}); login link for ${email}: ${url}`)
+    }
+  } else {
+    console.log(`[envelops] login link for ${email}: ${url}`)
+  }
   return { url, expiresAt }
 }
 

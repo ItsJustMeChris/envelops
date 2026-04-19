@@ -13,6 +13,10 @@ import {
   revokeInvite
 } from '@/lib/services/invites'
 import { baseUrl } from '@/lib/config'
+import { emailEnabled } from '@/lib/services/email'
+import { githubEnabled } from '@/lib/services/github-oauth'
+import { TerminalSelect } from '@/app/components/terminal-select'
+import { FlashCleanup } from '@/app/components/flash-cleanup'
 import { InviteLinkBanner } from './invite-link'
 
 export const dynamic = 'force-dynamic'
@@ -20,7 +24,9 @@ export const dynamic = 'force-dynamic'
 async function inviteAction(formData: FormData) {
   'use server'
   const slug = String(formData.get('slug'))
-  const email = String(formData.get('email') ?? '').trim()
+  // Ignore any smuggled email input when email delivery isn't configured — the invitee
+  // would get stuck at the email-accept step with no login link arriving.
+  const email = emailEnabled() ? String(formData.get('email') ?? '').trim() : ''
   const githubUsername = String(formData.get('github_username') ?? '').trim()
   const role = String(formData.get('role') ?? 'member') as 'owner' | 'admin' | 'member'
 
@@ -98,6 +104,8 @@ export default async function MembersPage({
   const manageable = await requireOwnerOrAdmin({ accountId: account.id, orgId: team.org.id })
   const actorRole = await getMemberRole({ accountId: account.id, orgId: team.org.id })
   const canPromote = actorRole === 'owner'
+  const emailOn = emailEnabled()
+  const githubOn = githubEnabled()
   const [members, invitesList] = await Promise.all([
     listMembers(team.org.id),
     listActiveInvitesForOrg(team.org.id)
@@ -113,6 +121,7 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-8">
+      <FlashCleanup keys={['revoked', 'error']} />
       <section>
         <h2 className="mb-4">members</h2>
         {newInviteUrl ? <InviteLinkBanner url={newInviteUrl} label={newInviteLabel} /> : null}
@@ -134,43 +143,67 @@ export default async function MembersPage({
         <>
           <section>
             <h3 className="mb-4">invite</h3>
-            <p className="text-dim text-xs mb-4">
-              provide an email, a github username, or both. either identifier is enough to accept.
-            </p>
-            <form action={inviteAction} className="space-y-3">
-              <input type="hidden" name="slug" value={slug} />
-              <div className="grid grid-cols-[1fr_1fr_6rem_auto] gap-3">
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="email (optional)"
-                  className="bg-transparent border border-rule px-3 py-1.5"
-                />
-                <input
-                  name="github_username"
-                  placeholder="github username (optional)"
-                  className="bg-transparent border border-rule px-3 py-1.5"
-                  autoComplete="off"
-                />
-                <select
-                  name="role"
-                  defaultValue="member"
-                  className="bg-transparent border border-rule px-2 py-1.5"
-                >
-                  <option value="member">member</option>
-                  {canPromote ? <option value="admin">admin</option> : null}
-                  {canPromote ? <option value="owner">owner</option> : null}
-                </select>
-                <button className="border border-accent text-accent px-4 py-1.5 hover:bg-accent/10">
-                  create invite
-                </button>
-              </div>
-              {!canPromote ? (
-                <p className="text-dim text-xs">
-                  only team owners can invite admins or owners. admins can invite plain members.
+            {!emailOn && !githubOn ? (
+              <p className="text-dim text-xs">
+                invites are disabled: this server has no sign-in providers configured. set{' '}
+                <code>ENVELOPS_MAILGUN_API_KEY</code> + <code>ENVELOPS_MAILGUN_URL</code> or{' '}
+                <code>ENVELOPS_GITHUB_CLIENT_ID</code> + <code>ENVELOPS_GITHUB_CLIENT_SECRET</code>.
+              </p>
+            ) : (
+              <>
+                <p className="text-dim text-xs mb-4">
+                  {emailOn && githubOn
+                    ? 'provide an email, a github username, or both. either identifier is enough to accept.'
+                    : emailOn
+                      ? 'provide an email. the invitee will accept via an emailed login link.'
+                      : 'provide a github username. email invites are disabled on this server.'}
                 </p>
-              ) : null}
-            </form>
+                <form action={inviteAction} className="space-y-3">
+                  <input type="hidden" name="slug" value={slug} />
+                  <div className={`grid gap-3 ${emailOn && githubOn ? 'grid-cols-[1fr_1fr_6rem_auto]' : 'grid-cols-[1fr_6rem_auto]'}`}>
+                    {emailOn ? (
+                      <input
+                        name="email"
+                        type="email"
+                        placeholder={githubOn ? 'email (optional)' : 'email'}
+                        required={!githubOn}
+                        className="bg-transparent border border-rule px-3 py-1.5"
+                      />
+                    ) : null}
+                    {githubOn ? (
+                      <input
+                        name="github_username"
+                        placeholder={emailOn ? 'github username (optional)' : 'github username'}
+                        required={!emailOn}
+                        className="bg-transparent border border-rule px-3 py-1.5"
+                        autoComplete="off"
+                      />
+                    ) : null}
+                    <TerminalSelect
+                      name="role"
+                      defaultValue="member"
+                      options={[
+                        { value: 'member', label: 'member' },
+                        ...(canPromote
+                          ? [
+                              { value: 'admin', label: 'admin' },
+                              { value: 'owner', label: 'owner' }
+                            ]
+                          : [])
+                      ]}
+                    />
+                    <button className="border border-accent text-accent px-4 py-1.5 hover:bg-accent/10">
+                      create invite
+                    </button>
+                  </div>
+                  {!canPromote ? (
+                    <p className="text-dim text-xs">
+                      only team owners can invite admins or owners. admins can invite plain members.
+                    </p>
+                  ) : null}
+                </form>
+              </>
+            )}
           </section>
 
           <section>

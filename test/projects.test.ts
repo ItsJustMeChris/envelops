@@ -2,10 +2,10 @@
 // non-granted members of the same team, while a team-wide project is open
 // to every member.
 //
-// Precondition: a dev server is running at $OSOPS_TEST_PORT (default 3100)
+// Precondition: a dev server is running at $ENVELOPS_TEST_PORT (default 3100)
 // with a fresh DB. Run with:
 //   rm -f data/osops.db && npm run db:migrate
-//   OSOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
+//   ENVELOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
 //   npx vitest run -c vitest.e2e.config.ts test/projects.test.ts
 
 import { and, eq } from 'drizzle-orm'
@@ -24,7 +24,7 @@ import { acceptInviteByAccount, canInviteWithRole, createInvite } from '../lib/s
 import { memberships, tokens as tokensTable, devices, organizations } from '../lib/db/schema'
 import { hashToken, mintToken } from '../lib/crypto/tokens'
 
-const PORT = process.env.OSOPS_TEST_PORT ?? '3100'
+const PORT = process.env.ENVELOPS_TEST_PORT ?? '3100'
 const BASE = `http://127.0.0.1:${PORT}`
 
 async function waitForServer(url: string, attempts = 60): Promise<void> {

@@ -10,7 +10,7 @@ import { findOrCreateAccountByEmail } from '../lib/services/accounts'
 import { approveDeviceCode, findPendingDeviceCodeByUserCode } from '../lib/services/oauth'
 
 const SHIM_BIN = path.resolve(__dirname, '../packages/cli-shim/bin/dotenvx-ops.js')
-const PORT = process.env.OSOPS_TEST_PORT ?? '3100'
+const PORT = process.env.ENVELOPS_TEST_PORT ?? '3100'
 const BASE = `http://127.0.0.1:${PORT}`
 
 async function waitForServer(url: string): Promise<void> {
@@ -41,7 +41,7 @@ describe('phase 3: OSS cli shim round-trip', () => {
     const account = await findOrCreateAccountByEmail(`shim+${Date.now()}@example.com`)
 
     const login = spawn(SHIM_BIN, ['login', '--hostname', BASE], {
-      env: { ...process.env, OSOPS_CLI_DIR: cliDir },
+      env: { ...process.env, ENVELOPS_CLI_DIR: cliDir },
       stdio: ['ignore', 'pipe', 'pipe']
     })
 
@@ -68,7 +68,7 @@ describe('phase 3: OSS cli shim round-trip', () => {
     ])
     expect(code).toBe(0)
 
-    const kp = await runShim(['keypair'], { OSOPS_CLI_DIR: cliDir })
+    const kp = await runShim(['keypair'], { ENVELOPS_CLI_DIR: cliDir })
     const parsed = JSON.parse(kp)
     expect(parsed.public_key).toMatch(/^0[23][0-9a-fA-F]{64}$/)
     expect(parsed.private_key).toMatch(/^[0-9a-fA-F]{64}$/)

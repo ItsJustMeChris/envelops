@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   if (!githubEnabled()) {
-    return NextResponse.json({ error: 'github_disabled', error_description: 'set OSOPS_GITHUB_CLIENT_ID + _SECRET' }, { status: 503 })
+    return NextResponse.json({ error: 'github_disabled', error_description: 'set ENVELOPS_GITHUB_CLIENT_ID + _SECRET' }, { status: 503 })
   }
   const url = new URL(req.url)
   const next = url.searchParams.get('next') ?? '/panel'

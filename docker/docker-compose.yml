@@ -5,8 +5,8 @@ services:
       dockerfile: docker/Dockerfile
     restart: unless-stopped
     environment:
-      OSOPS_MASTER_KEY: ${OSOPS_MASTER_KEY:?generate with: openssl rand -hex 32}
-      OSOPS_BASE_URL: ${OSOPS_BASE_URL:-http://localhost:3000}
+      ENVELOPS_MASTER_KEY: ${ENVELOPS_MASTER_KEY:?generate with: openssl rand -hex 32}
+      ENVELOPS_BASE_URL: ${ENVELOPS_BASE_URL:-http://localhost:3000}
       DATABASE_URL: file:/data/osops.db
     volumes:
       - osops-data:/data

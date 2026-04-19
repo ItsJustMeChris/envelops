@@ -15,8 +15,14 @@ import {
 import { getMemberRole, listMembers, requireOwnerOrAdmin } from '@/lib/services/invites'
 import { getDb } from '@/lib/db/client'
 import { projects as projectsTable } from '@/lib/db/schema'
+import { TerminalSelect } from '@/app/components/terminal-select'
+import { FlashCleanup } from '@/app/components/flash-cleanup'
 
 export const dynamic = 'force-dynamic'
+
+function roleRank(role: 'owner' | 'admin' | 'member'): number {
+  return role === 'owner' ? 0 : role === 'admin' ? 1 : 2
+}
 
 async function addMemberAction(formData: FormData) {
   'use server'
@@ -144,10 +150,11 @@ export default async function ProjectDetailPage({
     (m) => m.role === 'member' && !projectMemberIds.has(m.accountId)
   )
 
-  const envXContent = `# ${team.org.slug}/${projectDisplayName(project)}\nDOTENVX_PROJECT_ID=${project.dotenvxProjectId}`
+  const envXComment = `# ${team.org.slug}/${projectDisplayName(project)}`
 
   return (
     <div className="space-y-8">
+      <FlashCleanup keys={['created', 'error', 'member_added', 'member_removed', 'visibility_changed']} />
       <nav className="flex gap-4 text-sm">
         <Link
           href={`/panel/team/${slug}/projects/${project.dotenvxProjectId}/files`}
@@ -192,9 +199,7 @@ export default async function ProjectDetailPage({
           drop this file at the root of any project directory that should sync/encrypt against
           this project.
         </p>
-        <pre className="bg-black/40 border border-rule px-3 py-2 text-xs whitespace-pre-wrap">
-          {envXContent}
-        </pre>
+        <pre className="border border-rule px-4 py-3 overflow-x-auto whitespace-pre-wrap"><code><span className="text-dim">{envXComment}</span>{'\n'}DOTENVX_PROJECT_ID=<span className="text-accent">{project.dotenvxProjectId}</span></code></pre>
       </section>
 
       {manageable ? (
@@ -208,14 +213,14 @@ export default async function ProjectDetailPage({
                 name="project_dotenvx_id"
                 value={project.dotenvxProjectId}
               />
-              <select
+              <TerminalSelect
                 name="visibility"
                 defaultValue={project.visibility}
-                className="bg-transparent border border-rule px-2 py-1.5"
-              >
-                <option value="team">team-wide</option>
-                <option value="restricted">restricted</option>
-              </select>
+                options={[
+                  { value: 'team', label: 'team-wide' },
+                  { value: 'restricted', label: 'restricted' }
+                ]}
+              />
               <button className="border border-rule px-3 py-1.5 hover:border-accent hover:text-accent">
                 save
               </button>
@@ -273,17 +278,15 @@ export default async function ProjectDetailPage({
                       name="project_dotenvx_id"
                       value={project.dotenvxProjectId}
                     />
-                    <select
+                    <TerminalSelect
                       name="account_id"
                       required
-                      className="bg-transparent border border-rule px-2 py-1.5 flex-1"
-                    >
-                      {addableMembers.map((m) => (
-                        <option key={m.accountId} value={m.accountId}>
-                          {m.email} ({m.role})
-                        </option>
-                      ))}
-                    </select>
+                      className="flex-1"
+                      options={addableMembers.map((m) => ({
+                        value: String(m.accountId),
+                        label: `${m.email} (${m.role})`
+                      }))}
+                    />
                     <button className="border border-accent text-accent px-4 py-1.5 hover:bg-accent/10">
                       grant
                     </button>
@@ -292,10 +295,33 @@ export default async function ProjectDetailPage({
               ) : null}
             </>
           ) : (
-            <p className="text-dim text-xs">
-              this is a team-wide project. every team member has access. switch to restricted to
-              manage a specific access list.
-            </p>
+            <section>
+              <h3 className="mb-4">access</h3>
+              <p className="text-dim text-xs mb-4">
+                team-wide project — every team member has access. switch to restricted to manage a
+                specific access list.
+              </p>
+              {allTeamMembers.length === 0 ? (
+                <p className="text-dim">ø no team members</p>
+              ) : (
+                <ul className="space-y-1">
+                  {[...allTeamMembers]
+                    .sort((a, b) => roleRank(a.role) - roleRank(b.role) || a.email.localeCompare(b.email))
+                    .map((m) => (
+                      <li
+                        key={m.accountId}
+                        className="grid grid-cols-[1fr_10rem_6rem] gap-4 items-center"
+                      >
+                        <span>{m.email}</span>
+                        <span className="text-dim">{m.username}</span>
+                        <span className={m.role === 'owner' ? 'text-accent' : 'text-dim'}>
+                          {m.role}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </section>
           )}
         </>
       ) : null}

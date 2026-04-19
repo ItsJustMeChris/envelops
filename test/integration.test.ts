@@ -7,7 +7,7 @@ import { findOrCreateAccountByEmail } from '../lib/services/accounts'
 import { approveDeviceCode, findPendingDeviceCodeByUserCode } from '../lib/services/oauth'
 
 const OPS_BIN = 'dotenvx-ops'
-const PORT = process.env.OSOPS_TEST_PORT ?? '3100'
+const PORT = process.env.ENVELOPS_TEST_PORT ?? '3100'
 const BASE = `http://127.0.0.1:${PORT}`
 
 async function waitForServer(url: string, attempts = 60): Promise<void> {

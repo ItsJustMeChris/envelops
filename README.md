@@ -18,11 +18,11 @@ Not yet shipped: automated rotation connectors (manual rotation works today), SA
 
 ```sh
 openssl rand -hex 32 > .master-key
-docker run -d --name osops \
+docker run -d --name envelops \
   -p 3000:3000 \
-  -v osops-data:/data \
-  -e OSOPS_MASTER_KEY=$(cat .master-key) \
-  -e OSOPS_BASE_URL=https://ops.mycompany.com \
+  -v envelops-data:/data \
+  -e ENVELOPS_MASTER_KEY=$(cat .master-key) \
+  -e ENVELOPS_BASE_URL=https://ops.mycompany.com \
   ghcr.io/<your-fork>/envelops:latest
 ```
 
@@ -52,7 +52,7 @@ Server boots at `http://localhost:3000`.
 Test end-to-end against the real commercial CLI (install `@dotenvx/dotenvx-ops` globally first):
 
 ```sh
-OSOPS_TEST_PORT=3100 OSOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
+ENVELOPS_TEST_PORT=3100 ENVELOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
 npm run test:e2e
 ```
 
@@ -60,15 +60,17 @@ npm run test:e2e
 
 | Env var | Required | Description |
 |---|---|---|
-| `OSOPS_MASTER_KEY` | prod-only | 32 raw bytes as hex (64 chars) or base64. Encrypts private keys at rest. Generate: `openssl rand -hex 32`. |
-| `OSOPS_BASE_URL` | recommended | External URL of this server. Used in OAuth `verification_uri`. Defaults to `http://localhost:3000`. |
+| `ENVELOPS_MASTER_KEY` | prod-only | 32 raw bytes as hex (64 chars) or base64. Encrypts private keys at rest. Generate: `openssl rand -hex 32`. |
+| `ENVELOPS_BASE_URL` | recommended | External URL of this server. Used in OAuth `verification_uri`. Defaults to `http://localhost:3000`. |
 | `DATABASE_URL` | no | `file:./data/osops.db` by default. Postgres URL supported (phase 2). |
-| `OSOPS_GITHUB_CLIENT_ID` | optional | GitHub OAuth app client id. Enables "sign in with github" on the panel. Callback: `<OSOPS_BASE_URL>/login/github/callback`. |
-| `OSOPS_GITHUB_CLIENT_SECRET` | with above | GitHub OAuth app client secret. |
+| `ENVELOPS_GITHUB_CLIENT_ID` | optional | GitHub OAuth app client id. Enables "sign in with github" on the panel. Callback: `<ENVELOPS_BASE_URL>/login/github/callback`. |
+| `ENVELOPS_GITHUB_CLIENT_SECRET` | with above | GitHub OAuth app client secret. |
+| `ENVELOPS_MAILGUN_API_KEY` | optional | Mailgun private API key. If set together with `ENVELOPS_MAILGUN_URL`, login links are emailed via Mailgun; otherwise email is disabled and links are logged to stdout. |
+| `ENVELOPS_MAILGUN_URL` | with above | Mailgun domain messages base, e.g. `https://api.mailgun.net/v3/mg.mycompany.com`. |
 
 ## Architecture
 
-Single Next.js process. SQLite by default (one file, one volume, one backup). Private keys are wrapped with AES-256-GCM under a server master key — rotate the key by deploying a new `OSOPS_MASTER_KEY` and re-encrypting rows; old key id stays in the ciphertext prefix until the last row migrates.
+Single Next.js process. SQLite by default (one file, one volume, one backup). Private keys are wrapped with AES-256-GCM under a server master key — rotate the key by deploying a new `ENVELOPS_MASTER_KEY` and re-encrypting rows; old key id stays in the ciphertext prefix until the last row migrates.
 
 ## License
 

@@ -9,6 +9,8 @@ import {
   projectDisplayName
 } from '@/lib/services/projects'
 import { requireOwnerOrAdmin } from '@/lib/services/invites'
+import { TerminalSelect } from '@/app/components/terminal-select'
+import { FlashCleanup } from '@/app/components/flash-cleanup'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +61,7 @@ export default async function ProjectsPage({
 
   return (
     <div className="space-y-8">
+      <FlashCleanup keys={['error']} />
       <section>
         <h2 className="mb-4">projects</h2>
         {flash.error ? <p className="text-red-400 mb-4">✘ {flash.error}</p> : null}
@@ -103,14 +106,14 @@ export default async function ProjectsPage({
                 placeholder="name (e.g. ios-app)"
                 className="bg-transparent border border-rule px-3 py-1.5"
               />
-              <select
+              <TerminalSelect
                 name="visibility"
                 defaultValue="team"
-                className="bg-transparent border border-rule px-2 py-1.5"
-              >
-                <option value="team">team-wide</option>
-                <option value="restricted">restricted</option>
-              </select>
+                options={[
+                  { value: 'team', label: 'team-wide' },
+                  { value: 'restricted', label: 'restricted' }
+                ]}
+              />
               <button className="border border-accent text-accent px-4 py-1.5 hover:bg-accent/10">
                 create
               </button>

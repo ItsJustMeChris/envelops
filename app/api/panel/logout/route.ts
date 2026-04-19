@@ -7,5 +7,5 @@ export const dynamic = 'force-dynamic'
 
 export async function POST() {
   await endSession()
-  return NextResponse.redirect(new URL('/login', process.env.OSOPS_BASE_URL ?? 'http://localhost:3000'))
+  return NextResponse.redirect(new URL('/login', process.env.ENVELOPS_BASE_URL ?? 'http://localhost:3000'))
 }
