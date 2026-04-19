@@ -25,7 +25,7 @@ docker run -d --name envelops \
   -v envelops-data:/data \
   -e ENVELOPS_MASTER_KEY=$(cat .master-key) \
   -e ENVELOPS_BASE_URL=https://ops.mycompany.com \
-  ghcr.io/<your-fork>/envelops:latest
+  ghcr.io/itsjustmechris/envelops:latest
 ```
 
 Then:
