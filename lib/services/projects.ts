@@ -107,9 +107,6 @@ async function assertCanCreateProjectInOrg(accountId: number, orgId: number): Pr
     where: and(eq(memberships.accountId, accountId), eq(memberships.orgId, orgId))
   })
   if (!membership) throw new Error('forbidden: caller is not a member of the owning org')
-  if (membership.role !== 'owner' && membership.role !== 'admin') {
-    throw new Error('forbidden: owner or admin role required to create projects in this org')
-  }
 }
 
 export async function resolveOrgForAccount(input: {

@@ -9,7 +9,6 @@ import {
   listAccessibleProjectsForAccountInOrg,
   projectDisplayName
 } from '@/lib/services/projects'
-import { requireOwnerOrAdmin } from '@/lib/services/invites'
 import { TerminalSelect } from '@/app/components/terminal-select'
 import { FlashCleanup } from '@/app/components/flash-cleanup'
 
@@ -30,8 +29,6 @@ async function createProjectAction(formData: FormData) {
   if (!account) redirect('/login')
   const team = await resolveTeamForAccount({ accountId: account.id, slug })
   if (!team) redirect('/panel')
-  const ok = await requireOwnerOrAdmin({ accountId: account.id, orgId: team.org.id })
-  if (!ok) redirect(`/panel/team/${slug}/projects?error=forbidden`)
   if (!name) redirect(`/panel/team/${slug}/projects?error=missing_name`)
 
   const project = await createProject({
@@ -57,10 +54,6 @@ export default async function ProjectsPage({
   const team = await resolveTeamForAccount({ accountId: account.id, slug })
   if (!team) notFound()
 
-  const manageable = await requireOwnerOrAdmin({
-    accountId: account.id,
-    orgId: team.org.id
-  })
   const rows = await listAccessibleProjectsForAccountInOrg({
     accountId: account.id,
     orgId: team.org.id
@@ -103,37 +96,35 @@ export default async function ProjectsPage({
         )}
       </section>
 
-      {manageable ? (
-        <section>
-          <h3 className="mb-4">create project</h3>
-          <form action={createProjectAction} className="space-y-3">
-            <input type="hidden" name="slug" value={slug} />
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_10rem_auto] gap-3">
-              <input
-                name="name"
-                required
-                placeholder="name (e.g. ios-app)"
-                className="bg-transparent border border-rule px-3 py-2 sm:py-1.5 min-w-0"
-              />
-              <TerminalSelect
-                name="visibility"
-                defaultValue="team"
-                options={[
-                  { value: 'team', label: 'team-wide' },
-                  { value: 'restricted', label: 'restricted' }
-                ]}
-              />
-              <button className="border border-accent text-accent px-4 py-2 sm:py-1.5 hover:bg-accent/10">
-                create
-              </button>
-            </div>
-            <p className="text-dim text-xs">
-              team-wide projects are accessible to every member. restricted projects require
-              explicit access per account (owners/admins always have access).
-            </p>
-          </form>
-        </section>
-      ) : null}
+      <section>
+        <h3 className="mb-4">create project</h3>
+        <form action={createProjectAction} className="space-y-3">
+          <input type="hidden" name="slug" value={slug} />
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_10rem_auto] gap-3">
+            <input
+              name="name"
+              required
+              placeholder="name (e.g. ios-app)"
+              className="bg-transparent border border-rule px-3 py-2 sm:py-1.5 min-w-0"
+            />
+            <TerminalSelect
+              name="visibility"
+              defaultValue="team"
+              options={[
+                { value: 'team', label: 'team-wide' },
+                { value: 'restricted', label: 'restricted' }
+              ]}
+            />
+            <button className="border border-accent text-accent px-4 py-2 sm:py-1.5 hover:bg-accent/10">
+              create
+            </button>
+          </div>
+          <p className="text-dim text-xs">
+            team-wide projects are accessible to every member. restricted projects require
+            explicit access per account (owners/admins always have access).
+          </p>
+        </form>
+      </section>
     </div>
   )
 }
