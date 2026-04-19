@@ -147,6 +147,21 @@ export async function assertCanAccessProject(
   if (!access) throw new Error('forbidden: project is restricted and caller is not a member')
 }
 
+/**
+ * Bare membership check — caller is in the org in any role. Used for URI-scoped
+ * writes where the URI resolves to an org but not a project (e.g. rotation URIs).
+ */
+export async function assertAccountIsOrgMember(
+  accountId: number,
+  orgId: number
+): Promise<void> {
+  const { db } = getDb()
+  const row = await db.query.memberships.findFirst({
+    where: and(eq(memberships.accountId, accountId), eq(memberships.orgId, orgId))
+  })
+  if (!row) throw new Error('forbidden: caller is not a member of the owning org')
+}
+
 export async function canAccessProject(accountId: number, project: Project): Promise<boolean> {
   try {
     await assertCanAccessProject(accountId, project)

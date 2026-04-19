@@ -20,8 +20,9 @@ const Body = z.object({
 const MAX_DEVICE_CODE_BODY_BYTES = 16 * 1024
 
 // Without a per-IP cap, anyone can mint unlimited pending device codes and fill
-// oauth_device_codes. Legitimate CLIs issue one per `login` invocation.
-const MINT_LIMIT = 10
+// oauth_device_codes. Legitimate CLIs issue one per `login` invocation; the cap
+// is sized for offices / VPNs sharing a single egress IP, not per-human.
+const MINT_LIMIT = 60
 const MINT_WINDOW_MS = 60_000
 
 export async function POST(req: Request) {

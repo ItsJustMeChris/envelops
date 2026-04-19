@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { MAX_ENCODED_BYTES, readJsonWithLimit } from '@/lib/http/body'
+import { readJsonWithLimit } from '@/lib/http/body'
 import { getDb } from '@/lib/db/client'
 import { apiError, json } from '@/lib/http/responses'
 import { requireBearer, touchDevice } from '@/lib/services/cli-auth'
@@ -13,7 +13,11 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const MAX_OBSERVE_BYTES = 256 * 1024
-const OBSERVE_LIMIT = 20
+// Observe is best-effort telemetry fired per CLI invocation. Watch-mode loops
+// and parallel CI runners burst well past 20/min on a single device; 300/min
+// (~5/sec sustained) clears realistic usage while still bounding write
+// amplification from a stolen token.
+const OBSERVE_LIMIT = 300
 const OBSERVE_WINDOW_MS = 60_000
 
 const Body = z.object({

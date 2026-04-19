@@ -47,9 +47,14 @@ interface DecodedFile {
   src: string
 }
 
-const MAX_SYNC_FILES = 128
+// Monorepos with per-service envs routinely exceed a couple hundred files; the
+// 5MB total-body cap is the real defense, this is just a fail-fast sanity check.
+const MAX_SYNC_FILES = 1024
 const MAX_SYNC_FILEPATH_BYTES = 1024
-const MAX_SYNC_FILE_SRC_BYTES = 256 * 1024
+// Matches MAX_ENCODED_BYTES so a single pathological file can't get past the
+// per-file check only to be rejected at the total-payload check. .env files
+// realistically sit under 50KB; 5MB is intentional headroom, not a target.
+const MAX_SYNC_FILE_SRC_BYTES = 5 * 1024 * 1024
 
 function newEnvUri(): string {
   return `dotenvx://env_${randomBytes(16).toString('hex')}`
