@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { gcm } from '@noble/ciphers/aes'
-import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils'
+import { gcm } from '@noble/ciphers/aes.js'
+import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils.js'
 
 const ENV = 'ENVELOPS_MASTER_KEY'
 const KEY_LEN = 32

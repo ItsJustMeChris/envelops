@@ -9,7 +9,7 @@ import { baseOrigin } from './lib/config'
 // relaxed in some future browser. CLI traffic to `/api/*` doesn't carry
 // `Next-Action` and is unaffected; the existing `/api/panel/*` handlers keep
 // their own `requireSameOrigin` check.
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   if (req.method === 'POST' && req.headers.has('next-action')) {
     const origin = req.headers.get('origin')
     if (!origin || origin !== baseOrigin()) {

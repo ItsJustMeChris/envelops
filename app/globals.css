@@ -1,11 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Terminal-ish palette matching the Ops aesthetic (cream-on-black) */
+  --color-bg: #0a0a0a;
+  --color-fg: #e8dcc4;
+  --color-dim: #8a7f6a;
+  --color-accent: #ffcc66;
+  --color-rule: #2a2622;
+}
 
 html, body {
-  background: theme('colors.bg');
-  color: theme('colors.fg');
-  font-family: theme('fontFamily.mono');
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -15,24 +24,24 @@ html, body {
 /* Selection highlight: gold accent on near-black, matching the button focus state.
    High contrast against cream-on-black body text; reads as "you grabbed that". */
 ::selection {
-  background-color: theme('colors.accent');
-  color: theme('colors.bg');
+  background-color: var(--color-accent);
+  color: var(--color-bg);
   text-shadow: none;
 }
 ::-moz-selection {
-  background-color: theme('colors.accent');
-  color: theme('colors.bg');
+  background-color: var(--color-accent);
+  color: var(--color-bg);
   text-shadow: none;
 }
 
 a { text-decoration: underline; text-underline-offset: 3px; }
-a:hover { color: theme('colors.accent'); }
+a:hover { color: var(--color-accent); }
 
 /* Horizontal rule mimicking Ops panel dashed separators. */
 .rule {
   position: relative;
   height: 1px;
-  background-image: linear-gradient(to right, theme('colors.rule') 50%, transparent 0%);
+  background-image: linear-gradient(to right, var(--color-rule) 50%, transparent 0%);
   background-size: 12px 1px;
   background-repeat: repeat-x;
 }
@@ -40,7 +49,7 @@ a:hover { color: theme('colors.accent'); }
 /* Vertical rule used in the panel's sidebar divider. */
 .vrule {
   width: 1px;
-  background-image: linear-gradient(theme('colors.rule') 50%, transparent 0%);
+  background-image: linear-gradient(var(--color-rule) 50%, transparent 0%);
   background-size: 1px 8px;
   background-repeat: repeat-y;
 }
@@ -54,7 +63,7 @@ a:hover { color: theme('colors.accent'); }
   -moz-appearance: none;
   color-scheme: dark;
   background-color: transparent;
-  color: theme('colors.fg');
+  color: var(--color-fg);
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3.5 L5 7.5 L9 3.5' stroke='%23ffcc66' stroke-width='1.25' fill='none' stroke-linecap='square'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.6rem center;
@@ -64,7 +73,7 @@ a:hover { color: theme('colors.accent'); }
   transition: border-color 120ms ease, color 120ms ease;
 }
 .select-terminal:hover {
-  border-color: theme('colors.accent');
+  border-color: var(--color-accent);
 }
 .select-terminal:focus {
   outline: none;
@@ -73,13 +82,13 @@ a:hover { color: theme('colors.accent'); }
    "lit up" after a mouse click + selection. */
 .select-terminal:focus-visible,
 .select-terminal[aria-expanded="true"] {
-  border-color: theme('colors.accent');
-  color: theme('colors.accent');
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 .select-terminal option {
-  background-color: theme('colors.bg');
-  color: theme('colors.fg');
-  font-family: theme('fontFamily.mono');
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
 }
 
 /* Hide scrollbar chrome on horizontal scroll regions (mobile nav strips, etc.)

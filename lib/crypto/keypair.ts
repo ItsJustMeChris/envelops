@@ -1,5 +1,5 @@
 import * as secp from '@noble/secp256k1'
-import { bytesToHex } from '@noble/hashes/utils'
+import { bytesToHex } from '@noble/hashes/utils.js'
 
 export interface Keypair {
   publicKey: string
@@ -8,11 +8,10 @@ export interface Keypair {
 
 /** Generate a fresh secp256k1 keypair. Returns hex — compressed pubkey (33 bytes → 66 chars). */
 export function generateKeypair(): Keypair {
-  const sk = secp.utils.randomPrivateKey()
-  const pk = secp.getPublicKey(sk, true)
+  const { secretKey, publicKey } = secp.keygen()
   return {
-    privateKey: bytesToHex(sk),
-    publicKey: bytesToHex(pk)
+    privateKey: bytesToHex(secretKey),
+    publicKey: bytesToHex(publicKey)
   }
 }
 
