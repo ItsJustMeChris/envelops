@@ -75,6 +75,19 @@ export async function resolveOrCreateProject(input: {
     return ensureDefaultProjectForOrg(orgId)
   }
 
+  // Reuse an existing project with the same cwd name in this org so a sync from a
+  // checkout without `.env.x` lands on the right project instead of minting a
+  // duplicate. Names are unique per-org (see projects_org_name_idx).
+  if (!input.dotenvxProjectId && input.cwdName) {
+    const existingByName = await db.query.projects.findFirst({
+      where: and(eq(projects.orgId, orgId), eq(projects.name, input.cwdName))
+    })
+    if (existingByName) {
+      await assertCanAccessProject(input.accountId, existingByName)
+      return existingByName
+    }
+  }
+
   await assertCanCreateProjectInOrg(input.accountId, orgId)
   const inserted = await db
     .insert(projects)
@@ -192,6 +205,13 @@ export async function listAccessibleProjectsForAccountInOrg(input: {
   return filtered
 }
 
+export class ProjectNameConflictError extends Error {
+  constructor(public readonly name: string) {
+    super(`project name "${name}" already exists in this team`)
+    this.name = 'ProjectNameConflictError'
+  }
+}
+
 export async function createProject(input: {
   orgId: number
   name: string
@@ -199,12 +219,20 @@ export async function createProject(input: {
   createdBy: number
 }): Promise<Project> {
   const { db } = getDb()
+  const trimmed = input.name.trim()
+  const nameValue = trimmed.length > 0 ? trimmed : null
+  if (nameValue) {
+    const existing = await db.query.projects.findFirst({
+      where: and(eq(projects.orgId, input.orgId), eq(projects.name, nameValue))
+    })
+    if (existing) throw new ProjectNameConflictError(nameValue)
+  }
   const inserted = await db
     .insert(projects)
     .values({
       orgId: input.orgId,
       dotenvxProjectId: generateProjectId(),
-      name: input.name.trim() || null,
+      name: nameValue,
       visibility: input.visibility,
       createdBy: input.createdBy
     })

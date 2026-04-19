@@ -17,7 +17,7 @@ import { getMemberRole, listMembers, requireOwnerOrAdmin } from '@/lib/services/
 import { getDb } from '@/lib/db/client'
 import { projects as projectsTable } from '@/lib/db/schema'
 import { TerminalSelect } from '@/app/components/terminal-select'
-import { FlashCleanup } from '@/app/components/flash-cleanup'
+import { FlashToasts } from '@/app/components/flash-toasts'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,20 +113,11 @@ async function changeVisibilityAction(formData: FormData) {
 }
 
 export default async function ProjectDetailPage({
-  params,
-  searchParams
+  params
 }: {
   params: Promise<{ slug: string; projectId: string }>
-  searchParams: Promise<{
-    created?: string
-    error?: string
-    member_added?: string
-    member_removed?: string
-    visibility_changed?: string
-  }>
 }) {
   const { slug, projectId } = await params
-  const flash = await searchParams
   const account = await currentAccount()
   if (!account) notFound()
   const team = await resolveTeamForAccount({ accountId: account.id, slug })
@@ -164,7 +155,15 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="space-y-8">
-      <FlashCleanup keys={['created', 'error', 'member_added', 'member_removed', 'visibility_changed']} />
+      <FlashToasts
+        specs={[
+          { key: 'created', equals: '1', message: '✔ project created' },
+          { key: 'member_added', message: '✔ access granted' },
+          { key: 'member_removed', message: '✔ access revoked' },
+          { key: 'visibility_changed', template: '✔ visibility set to {value}' },
+          { key: 'error', template: '✘ {value}', tone: 'error' }
+        ]}
+      />
       <nav className="flex gap-4 text-sm">
         <Link
           href={`/panel/team/${slug}/projects/${project.dotenvxProjectId}/files`}
@@ -182,13 +181,6 @@ export default async function ProjectDetailPage({
 
       <section>
         <h2 className="mb-4">{projectDisplayName(project)}</h2>
-        {flash.created ? <p className="text-accent mb-4">✔ project created</p> : null}
-        {flash.member_added ? <p className="text-accent mb-4">✔ access granted</p> : null}
-        {flash.member_removed ? <p className="text-accent mb-4">✔ access revoked</p> : null}
-        {flash.visibility_changed ? (
-          <p className="text-accent mb-4">✔ visibility set to {flash.visibility_changed}</p>
-        ) : null}
-        {flash.error ? <p className="text-red-400 mb-4">✘ {flash.error}</p> : null}
 
         <dl className="grid grid-cols-[6rem_1fr] sm:grid-cols-[10rem_1fr] gap-x-4 gap-y-2">
           <dt className="text-dim">id</dt>

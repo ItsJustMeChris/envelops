@@ -7,10 +7,11 @@ import { resolveTeamForAccount } from '@/lib/services/team-scope'
 import {
   createProject,
   listAccessibleProjectsForAccountInOrg,
-  projectDisplayName
+  projectDisplayName,
+  ProjectNameConflictError
 } from '@/lib/services/projects'
 import { TerminalSelect } from '@/app/components/terminal-select'
-import { FlashCleanup } from '@/app/components/flash-cleanup'
+import { FlashToasts } from '@/app/components/flash-toasts'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,24 +32,29 @@ async function createProjectAction(formData: FormData) {
   if (!team) redirect('/panel')
   if (!name) redirect(`/panel/team/${slug}/projects?error=missing_name`)
 
-  const project = await createProject({
-    orgId: team.org.id,
-    name,
-    visibility,
-    createdBy: account.id
-  })
+  let project
+  try {
+    project = await createProject({
+      orgId: team.org.id,
+      name,
+      visibility,
+      createdBy: account.id
+    })
+  } catch (err) {
+    if (err instanceof ProjectNameConflictError) {
+      redirect(`/panel/team/${slug}/projects?error=name_taken`)
+    }
+    throw err
+  }
   redirect(`/panel/team/${slug}/projects/${project.dotenvxProjectId}?created=1`)
 }
 
 export default async function ProjectsPage({
-  params,
-  searchParams
+  params
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ error?: string }>
 }) {
   const { slug } = await params
-  const flash = await searchParams
   const account = await currentAccount()
   if (!account) notFound()
   const team = await resolveTeamForAccount({ accountId: account.id, slug })
@@ -61,10 +67,9 @@ export default async function ProjectsPage({
 
   return (
     <div className="space-y-8">
-      <FlashCleanup keys={['error']} />
+      <FlashToasts specs={[{ key: 'error', template: '✘ {value}', tone: 'error' }]} />
       <section>
         <h2 className="mb-4">projects</h2>
-        {flash.error ? <p className="text-red-400 mb-4">✘ {flash.error}</p> : null}
         {rows.length === 0 ? (
           <p className="text-dim">ø no projects yet</p>
         ) : (

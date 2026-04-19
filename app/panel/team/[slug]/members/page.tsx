@@ -16,7 +16,7 @@ import { baseUrl } from '@/lib/config'
 import { emailEnabled } from '@/lib/services/email'
 import { githubEnabled } from '@/lib/services/github-oauth'
 import { TerminalSelect } from '@/app/components/terminal-select'
-import { FlashCleanup } from '@/app/components/flash-cleanup'
+import { FlashToasts } from '@/app/components/flash-toasts'
 import { InviteLinkBanner } from './invite-link'
 
 export const dynamic = 'force-dynamic'
@@ -90,8 +90,6 @@ export default async function MembersPage({
     invite_token?: string
     invite_email?: string
     invite_github?: string
-    error?: string
-    revoked?: string
   }>
 }) {
   const { slug } = await params
@@ -121,12 +119,15 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-8">
-      <FlashCleanup keys={['revoked', 'error']} />
+      <FlashToasts
+        specs={[
+          { key: 'revoked', template: '✔ revoked invite #{value}' },
+          { key: 'error', template: '✘ {value}', tone: 'error' }
+        ]}
+      />
       <section>
         <h2 className="mb-4">members</h2>
         {newInviteUrl ? <InviteLinkBanner url={newInviteUrl} label={newInviteLabel} /> : null}
-        {flash.revoked ? <p className="text-accent mb-4">✔ revoked invite #{flash.revoked}</p> : null}
-        {flash.error ? <p className="text-red-400 mb-4">✘ {flash.error}</p> : null}
 
         <ul className="space-y-2 sm:space-y-1">
           {members.map((m) => (

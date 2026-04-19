@@ -124,6 +124,9 @@ export const projects = sqliteTable(
   (t) => ({
     byOrg: index('projects_org_idx').on(t.orgId),
     byOrgDefault: index('projects_org_default_idx').on(t.orgId, t.isDefault),
+    // Names are unique per-org (null allowed multiple times, which is standard SQLite
+    // behavior — id-only rows never minted by the UI don't collide).
+    byOrgName: uniqueIndex('projects_org_name_idx').on(t.orgId, t.name),
     visibilityCheck: check(
       'projects_visibility_check',
       sql`${t.visibility} IN ('team', 'restricted')`

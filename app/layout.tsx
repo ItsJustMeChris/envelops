@@ -2,6 +2,8 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
+import { Toaster } from './components/toast'
+
 export const metadata: Metadata = {
   title: 'envelops',
   description: 'Self-hosted open-source alternative to the dotenvx Ops panel.'
@@ -16,7 +18,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        {children}
+        <Toaster />
+      </body>
     </html>
   )
 }

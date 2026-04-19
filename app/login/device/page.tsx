@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { currentAccount } from '@/lib/services/panel-auth'
-import { FlashCleanup } from '@/app/components/flash-cleanup'
+import { FlashToasts } from '@/app/components/flash-toasts'
 import { CodeForm } from './code-form'
 import { TerminalPrinter, type TerminalLine } from './terminal-printer'
 
@@ -105,15 +105,15 @@ export default async function DevicePage({
   // Idle: auto-submitting code form.
   return (
     <main className="mx-auto max-w-xl px-6 py-16">
-      <FlashCleanup keys={['err']} />
+      <FlashToasts
+        specs={[
+          { key: 'err', equals: 'empty', message: '✘ code required.', tone: 'error' }
+        ]}
+      />
       <h1 className="text-accent text-lg mb-4">authorize device</h1>
       <div className="rule mb-6" />
       <p className="text-dim mb-2">signed in as {account.email}</p>
       <p className="mb-6">enter the device code shown in your cli output.</p>
-
-      {params.err === 'empty' ? (
-        <p className="text-red-400 mb-4">✘ code required.</p>
-      ) : null}
 
       <CodeForm defaultCode={defaultCode} />
     </main>
