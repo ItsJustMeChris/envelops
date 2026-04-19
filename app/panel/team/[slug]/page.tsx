@@ -14,6 +14,7 @@ export default async function KeysPage({ params }: { params: Promise<{ slug: str
   const team = await resolveTeamForAccount({ accountId: account.id, slug })
   if (!team) notFound()
   const keys = await listKeypairsForOrg(team.org.id)
+  const canReveal = team.role === 'owner' || team.role === 'admin'
 
   if (keys.length === 0) {
     return (
@@ -35,6 +36,7 @@ export default async function KeysPage({ params }: { params: Promise<{ slug: str
             index={i + 1}
             publicKey={k.publicKey}
             createdAt={k.createdAt.toISOString()}
+            canReveal={canReveal}
           />
         ))}
       </ul>

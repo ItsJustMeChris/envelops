@@ -5,7 +5,6 @@ import { getDb } from '../db/client'
 import { accounts, invites, memberships, organizations, type Account, type Invite } from '../db/schema'
 import { hashToken } from '../crypto/tokens'
 import { baseUrl } from '../config'
-import { findOrCreateAccountByEmail } from './accounts'
 
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 14 // 14 days
 
@@ -83,27 +82,6 @@ export async function inspectInvite(plaintext: string): Promise<{
   const org = await db.query.organizations.findFirst({ where: eq(organizations.id, row.orgId) })
   if (!org) return null
   return { invite: row, org: { id: org.id, slug: org.slug, name: org.name } }
-}
-
-/**
- * Accept via the email form: the invitee typed an email, we trust the match (they
- * finish by clicking the login link we email afterward). Only works when the
- * invite has an email constraint set.
- */
-export async function acceptInviteByEmail(
-  plaintext: string,
-  claimedEmail: string
-): Promise<{ accountId: number; orgId: number; orgSlug: string } | { error: string }> {
-  const inspection = await inspectInvite(plaintext)
-  if (!inspection) return { error: 'invite_invalid' }
-  const { invite } = inspection
-
-  const normalized = claimedEmail.toLowerCase().trim()
-  if (!invite.email) return { error: 'invite_requires_github' }
-  if (normalized !== invite.email) return { error: 'invite_email_mismatch' }
-
-  const account = await findOrCreateAccountByEmail(normalized)
-  return finaliseAccept(invite.id, account, invite.orgId, invite.role)
 }
 
 /**

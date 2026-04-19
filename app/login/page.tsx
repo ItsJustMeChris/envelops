@@ -3,8 +3,18 @@ import { redirect } from 'next/navigation'
 import { requestLoginLink } from '@/lib/services/panel-auth'
 import { githubEnabled } from '@/lib/services/github-oauth'
 import { emailEnabled } from '@/lib/services/email'
+import { clientIp } from '@/lib/http/client-ip'
+import { rateLimit } from '@/lib/http/rate-limit'
 
 export const dynamic = 'force-dynamic'
+
+// Login links are free mailgun sends + cheap enumeration oracles. Cap both the
+// source (stops spraying) and the target (stops flooding one victim's inbox).
+// Windows are generous so a real user's mistyped email still works.
+const LINK_IP_LIMIT = 8
+const LINK_IP_WINDOW_MS = 10 * 60_000
+const LINK_EMAIL_LIMIT = 3
+const LINK_EMAIL_WINDOW_MS = 10 * 60_000
 
 async function sendLink(formData: FormData) {
   'use server'
@@ -12,7 +22,22 @@ async function sendLink(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   const next = String(formData.get('next') ?? '/panel')
   if (!email) return
-  await requestLoginLink(email)
+
+  const ip = await clientIp()
+  const ipLimit = rateLimit(`login-link-ip:${ip}`, {
+    limit: LINK_IP_LIMIT,
+    windowMs: LINK_IP_WINDOW_MS
+  })
+  const emailLimit = rateLimit(`login-link-email:${email}`, {
+    limit: LINK_EMAIL_LIMIT,
+    windowMs: LINK_EMAIL_WINDOW_MS
+  })
+  // Keep the user-visible response identical whether we send or drop; that's
+  // what preserves the "if it's a valid account" ambiguity on the confirmation
+  // page. The limit is silent from the attacker's view.
+  if (ipLimit.allowed && emailLimit.allowed) {
+    await requestLoginLink(email)
+  }
   redirect(`/login?sent=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`)
 }
 

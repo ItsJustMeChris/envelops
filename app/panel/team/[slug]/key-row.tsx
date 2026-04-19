@@ -5,11 +5,13 @@ import { useState } from 'react'
 export function KeyRow({
   index,
   publicKey,
-  createdAt
+  createdAt,
+  canReveal
 }: {
   index: number
   publicKey: string
   createdAt: string
+  canReveal: boolean
 }) {
   const [revealed, setRevealed] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -20,6 +22,7 @@ export function KeyRow({
       setRevealed(null)
       return
     }
+    if (!confirm('reveal the private key in plaintext? this will be recorded in the audit log.')) return
     setLoading(true)
     setError(null)
     try {
@@ -45,14 +48,23 @@ export function KeyRow({
     <li className="grid grid-cols-[2.5rem_1fr_auto] gap-x-3 sm:grid-cols-[3rem_12ch_1fr_5rem] sm:gap-4 sm:items-center">
       <span className="text-dim">{String(index).padStart(3, '0')}.</span>
       <span className="text-fg truncate min-w-0">{prefix}…</span>
-      <button
-        className="text-dim hover:text-fg underline text-xs justify-self-end sm:justify-self-auto sm:order-last"
-        onClick={toggle}
-        disabled={loading}
-        title={createdAt}
-      >
-        [{loading ? '…' : revealed ? 'hide' : 'show'}]
-      </button>
+      {canReveal ? (
+        <button
+          className="text-dim hover:text-fg underline text-xs justify-self-end sm:justify-self-auto sm:order-last"
+          onClick={toggle}
+          disabled={loading}
+          title={createdAt}
+        >
+          [{loading ? '…' : revealed ? 'hide' : 'show'}]
+        </button>
+      ) : (
+        <span
+          className="text-dim text-xs justify-self-end sm:justify-self-auto sm:order-last"
+          title="only team owners or admins can reveal private keys"
+        >
+          [locked]
+        </span>
+      )}
       <span className={`col-start-1 col-span-3 sm:col-span-1 sm:col-start-auto ${revealed ? 'text-accent break-all' : 'text-dim tracking-widest truncate'}`}>
         {shown}
       </span>

@@ -8,12 +8,16 @@ import { hashToken } from '../crypto/tokens'
 import { baseUrl } from '../config'
 import { findOrCreateAccountByEmail } from './accounts'
 import { emailEnabled, sendEmail } from './email'
+import { isSafeLocalPath } from '../http/safe-redirect'
 
 const SESSION_COOKIE = 'osops_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14 // 14 days
 const LINK_TTL_MS = 1000 * 60 * 20 // 20 min
 
-export async function requestLoginLink(email: string): Promise<{ url: string; expiresAt: Date }> {
+export async function requestLoginLink(
+  email: string,
+  options?: { next?: string }
+): Promise<{ url: string; expiresAt: Date }> {
   const { db } = getDb()
   const plaintext = randomBytes(24).toString('base64url')
   const tokenHash = hashToken(plaintext)
@@ -25,7 +29,8 @@ export async function requestLoginLink(email: string): Promise<{ url: string; ex
     expiresAt
   })
 
-  const url = `${baseUrl()}/login/verify?token=${plaintext}`
+  const nextParam = isSafeLocalPath(options?.next) ? `&next=${encodeURIComponent(options!.next!)}` : ''
+  const url = `${baseUrl()}/login/verify?token=${plaintext}${nextParam}`
   if (emailEnabled()) {
     const result = await sendEmail({
       to: email,
@@ -62,6 +67,9 @@ export async function issueSession(accountId: number): Promise<void> {
   const tokenHash = hashToken(plaintext)
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS)
 
+  // Rotate: invalidate prior sessions for this account so a re-auth revokes any
+  // cookies that may have been captured before the user chose to sign in again.
+  await db.delete(sessions).where(eq(sessions.accountId, accountId))
   await db.insert(sessions).values({ accountId, tokenHash, expiresAt })
 
   const store = await cookies()
