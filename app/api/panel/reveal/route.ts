@@ -47,5 +47,8 @@ export async function POST(req: Request) {
     payload: { public_key: row.publicKey }
   })
   const privateKey = unsealPrivateKey(row.encryptedPrivateKey)
-  return json({ private_key: privateKey })
+  return json(
+    { private_key: privateKey },
+    { headers: { 'cache-control': 'no-store', pragma: 'no-cache' } }
+  )
 }

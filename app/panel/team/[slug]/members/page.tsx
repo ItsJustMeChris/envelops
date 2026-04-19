@@ -151,7 +151,7 @@ export default async function MembersPage({
             {!emailOn && !githubOn ? (
               <p className="text-dim text-xs">
                 invites are disabled: this server has no sign-in providers configured. set{' '}
-                <code>ENVELOPS_MAILGUN_API_KEY</code> + <code>ENVELOPS_MAILGUN_URL</code> or{' '}
+                <code>ENVELOPS_MAILGUN_API_KEY</code> + <code>ENVELOPS_MAILGUN_EMAIL_DOMAIN</code> or{' '}
                 <code>ENVELOPS_GITHUB_CLIENT_ID</code> + <code>ENVELOPS_GITHUB_CLIENT_SECRET</code>.
               </p>
             ) : (

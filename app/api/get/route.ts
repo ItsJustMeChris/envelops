@@ -54,7 +54,11 @@ export async function POST(req: Request) {
 
     return new Response(result.content, {
       status: 200,
-      headers: { 'content-type': 'text/plain; charset=utf-8' }
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'no-store',
+        pragma: 'no-cache'
+      }
     })
   }
 
@@ -91,6 +95,10 @@ export async function POST(req: Request) {
   // Observed commercial behavior: returns plaintext as `text/plain`.
   return new Response(secret.value, {
     status: 200,
-    headers: { 'content-type': 'text/plain; charset=utf-8' }
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      'cache-control': 'no-store',
+      pragma: 'no-cache'
+    }
   })
 }

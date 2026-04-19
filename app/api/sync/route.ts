@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { MAX_ENCODED_BYTES, readJsonWithLimit } from '@/lib/http/body'
 import { apiError, asForbidden, json } from '@/lib/http/responses'
 import { requireBearer, touchDevice } from '@/lib/services/cli-auth'
 import { recordSyncBackup } from '@/lib/services/sync'
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 const Body = z.object({
   device_public_key: z.string().min(1),
-  encoded: z.string().min(1),
+  encoded: z.string().min(1).max(MAX_ENCODED_BYTES),
   dotenvx_project_id: z.string().nullable().optional(),
   synced_at: z.string().optional(),
   pwd: z.string().nullable().optional(),
@@ -28,9 +29,12 @@ export async function POST(req: Request) {
   const id = await requireBearer(req)
   if (!id) return apiError(401, 'unauthorized', 'missing or invalid bearer token')
 
+  const body = await readJsonWithLimit(req, MAX_ENCODED_BYTES)
+  if (!body.ok) return body.res
+
   let parsed
   try {
-    parsed = Body.parse(await req.json())
+    parsed = Body.parse(body.data)
   } catch {
     return apiError(400, 'invalid_request', 'malformed body')
   }

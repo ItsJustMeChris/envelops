@@ -9,7 +9,7 @@ import { isSafeLocalPath } from '../http/safe-redirect'
 import { ensurePersonalOrg } from './accounts'
 import { issueSession } from './panel-auth'
 
-const STATE_COOKIE = 'osops_gh_state'
+const STATE_COOKIE = 'envelops_osops_gh_state'
 
 export function githubEnabled(): boolean {
   return Boolean(process.env.ENVELOPS_GITHUB_CLIENT_ID && process.env.ENVELOPS_GITHUB_CLIENT_SECRET)

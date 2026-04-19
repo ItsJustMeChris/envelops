@@ -66,8 +66,9 @@ npm run test:e2e
 | `DATABASE_URL` | no | `file:./data/osops.db` by default. Postgres URL supported (phase 2). |
 | `ENVELOPS_GITHUB_CLIENT_ID` | optional | GitHub OAuth app client id. Enables "sign in with github" on the panel. Callback: `<ENVELOPS_BASE_URL>/login/github/callback`. |
 | `ENVELOPS_GITHUB_CLIENT_SECRET` | with above | GitHub OAuth app client secret. |
-| `ENVELOPS_MAILGUN_API_KEY` | optional | Mailgun private API key. If set together with `ENVELOPS_MAILGUN_URL`, login links are emailed via Mailgun; otherwise email is disabled and links are logged to stdout. |
-| `ENVELOPS_MAILGUN_URL` | with above | Mailgun target. Pass either your sending domain on its own (e.g. `mg.mycompany.com` — US region assumed) or a full messages base URL (e.g. `https://api.eu.mailgun.net/v3/mg.mycompany.com` for EU). |
+| `ENVELOPS_MAILGUN_API_KEY` | optional | Mailgun private API key. If set together with `ENVELOPS_MAILGUN_EMAIL_DOMAIN`, login links are emailed via Mailgun; otherwise email is disabled and links are logged to stdout. |
+| `ENVELOPS_MAILGUN_EMAIL_DOMAIN` | with above | Your Mailgun sending domain (bare hostname, e.g. `mg.mycompany.com`). Not a URL — the Mailgun API host is chosen internally from `ENVELOPS_MAILGUN_REGION`. |
+| `ENVELOPS_MAILGUN_REGION` | optional | `us` (default) or `eu`. Selects which Mailgun API host (`api.mailgun.net` vs `api.eu.mailgun.net`) to post to. |
 
 ## Architecture
 

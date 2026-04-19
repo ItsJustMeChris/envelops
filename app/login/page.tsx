@@ -68,7 +68,7 @@ export default async function LoginPage({
       {!email && !github ? (
         <p className="text-dim">
           no sign-in providers are configured on this server. set{' '}
-          <code>ENVELOPS_MAILGUN_API_KEY</code> + <code>ENVELOPS_MAILGUN_URL</code> to enable email links, or{' '}
+          <code>ENVELOPS_MAILGUN_API_KEY</code> + <code>ENVELOPS_MAILGUN_EMAIL_DOMAIN</code> to enable email links, or{' '}
           <code>ENVELOPS_GITHUB_CLIENT_ID</code> + <code>ENVELOPS_GITHUB_CLIENT_SECRET</code> for github oauth.
         </p>
       ) : null}

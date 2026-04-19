@@ -10,7 +10,7 @@ import { findOrCreateAccountByEmail } from './accounts'
 import { emailEnabled, sendEmail } from './email'
 import { isSafeLocalPath } from '../http/safe-redirect'
 
-const SESSION_COOKIE = 'osops_session'
+const SESSION_COOKIE = 'envelops_osops_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14 // 14 days
 const LINK_TTL_MS = 1000 * 60 * 20 // 20 min
 
@@ -32,17 +32,11 @@ export async function requestLoginLink(
   const nextParam = isSafeLocalPath(options?.next) ? `&next=${encodeURIComponent(options!.next!)}` : ''
   const url = `${baseUrl()}/login/verify?token=${plaintext}${nextParam}`
   if (emailEnabled()) {
-    const result = await sendEmail({
+    await sendEmail({
       to: email,
       subject: 'Your envelops login link',
       text: `Sign in to envelops:\n\n${url}\n\nThis link expires in 20 minutes. If you did not request it, ignore this email.`
     })
-    if (!result.sent) {
-      // Fall back to logs so the operator can still recover the link if Mailgun rejects.
-      console.log(`[envelops] email send failed (${result.error}); login link for ${email}: ${url}`)
-    }
-  } else {
-    console.log(`[envelops] login link for ${email}: ${url}`)
   }
   return { url, expiresAt }
 }

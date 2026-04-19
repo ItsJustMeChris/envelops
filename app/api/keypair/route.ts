@@ -54,5 +54,7 @@ export async function POST(req: Request) {
     cliVersion: parsed.cli_version ?? null
   })
 
-  return json(result)
+  return json(result, {
+    headers: { 'cache-control': 'no-store', pragma: 'no-cache' }
+  })
 }
