@@ -79,4 +79,4 @@ Single Next.js process. SQLite by default (one file, one volume, one backup). Pr
 
 MIT. See `LICENSE`.
 
-This project is not affiliated with, endorsed by, or sponsored by DOTENVX. It is a clean-room reimplementation of the wire protocol of the commercial `dotenvx-ops` CLI. 
+This project is not affiliated with, endorsed by, or sponsored by `dotenvx`. It is a clean-room reimplementation of the wire protocol of the commercial `dotenvx-ops` CLI. 
