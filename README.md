@@ -14,6 +14,8 @@ dotenvx-ops login --hostname https://ops.mycompany.com
 
 Not yet shipped: automated rotation connectors (manual rotation works today), SAML/OIDC-generic SSO (GitHub OAuth covers the common case), per-project RBAC.
 
+A small number of panel UX behaviors intentionally deviate from the commercial product — see [`DEVIATIONS.md`](./DEVIATIONS.md). Wire protocol is unchanged.
+
 ## Quickstart — Docker
 
 ```sh

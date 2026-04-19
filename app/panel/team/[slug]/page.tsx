@@ -15,8 +15,14 @@ export default async function KeysPage({ params }: { params: Promise<{ slug: str
   if (!team) notFound()
   const keys = await listKeypairsForOrg(team.org.id)
   const canReveal = team.role === 'owner' || team.role === 'admin'
+  // Members only ever see the first 5 bytes of a public key in the panel. The full key
+  // is what the CLI `/api/keypair` endpoint matches on, so withholding it means a member
+  // can't bounce off the web UI to walk a keypair they don't already have via a project file.
+  const displayKeys = canReveal
+    ? keys
+    : keys.map((k) => ({ ...k, publicKey: k.publicKey.slice(0, 10) }))
 
-  if (keys.length === 0) {
+  if (displayKeys.length === 0) {
     return (
       <div>
         <h2 className="mb-2">private keys</h2>
@@ -30,7 +36,7 @@ export default async function KeysPage({ params }: { params: Promise<{ slug: str
     <div>
       <h2 className="mb-4">private keys</h2>
       <ul className="space-y-2">
-        {keys.map((k, i) => (
+        {displayKeys.map((k, i) => (
           <KeyRow
             key={k.id}
             index={i + 1}
