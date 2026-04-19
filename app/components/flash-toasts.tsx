@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 import { pushToast, type Tone } from './toast'
 
@@ -16,16 +17,15 @@ export interface FlashSpec {
   tone?: Tone
 }
 
-// Replaces FlashCleanup. Reads one-shot status query params on mount, fires a toast
-// for each match, and strips the params from the URL via history.replaceState so a
-// reload doesn't re-trigger the same toast.
+// Reads one-shot status query params after each navigation, fires a toast for each
+// match, and strips the params via history.replaceState so a reload (or React
+// re-running the effect) doesn't re-fire. Same FlashToasts instance is reused across
+// same-segment navigations, so we key off pathname + searchParams instead of mount.
 export function FlashToasts({ specs }: { specs: FlashSpec[] }) {
-  const fired = useRef(false)
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    if (fired.current) return
-    fired.current = true
-
     const url = new URL(window.location.href)
     let changed = false
     for (const spec of specs) {
@@ -39,7 +39,7 @@ export function FlashToasts({ specs }: { specs: FlashSpec[] }) {
       changed = true
     }
     if (changed) window.history.replaceState({}, '', url.toString())
-  }, [specs])
+  }, [pathname, searchParams, specs])
 
   return null
 }
