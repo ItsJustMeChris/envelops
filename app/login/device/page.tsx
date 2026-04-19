@@ -68,7 +68,9 @@ export default async function DevicePage({
         ? 'code expired'
         : params.err === 'invalid'
           ? 'code invalid or already used'
-          : 'code rejected'
+          : params.err === 'rate'
+            ? 'too many attempts — wait a minute and try again'
+            : 'code rejected'
     const lines: TerminalLine[] = [
       { text: `verifying user_code [${formatted}]... FAIL`, tone: 'fail' },
       { text: `device authorization denied: ${reason}.`, tone: 'fail' }

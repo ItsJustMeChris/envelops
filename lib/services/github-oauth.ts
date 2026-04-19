@@ -5,6 +5,7 @@ import { baseUrl } from '../config'
 import { getDb } from '../db/client'
 import { accounts, type Account } from '../db/schema'
 import { eq } from 'drizzle-orm'
+import { isSafeLocalPath } from '../http/safe-redirect'
 import { ensurePersonalOrg } from './accounts'
 import { issueSession } from './panel-auth'
 
@@ -41,7 +42,7 @@ export async function validateStateAndRedirect(state: string): Promise<{ nextPat
   let nextPath = '/panel'
   try {
     const decoded = decodeURIComponent(enc)
-    if (decoded.startsWith('/')) nextPath = decoded
+    if (isSafeLocalPath(decoded)) nextPath = decoded
   } catch {
     // ignore
   }
