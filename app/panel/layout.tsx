@@ -21,12 +21,6 @@ export default async function PanelLayout({ children }: { children: ReactNode })
           <div className="text-dim text-xs">{account.email}</div>
         </div>
 
-        <nav className="space-y-1 mb-8">
-          <Link className="block" href="/panel">◆ private keys</Link>
-          <Link className="block" href="/panel/audit">☷ audit log</Link>
-          <Link className="block" href="/panel/settings">⌘ settings</Link>
-        </nav>
-
         <div className="text-dim text-xs mb-2">teams</div>
         <ul className="space-y-1 mb-auto">
           {orgs.map((o) => (
