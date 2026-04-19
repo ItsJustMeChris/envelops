@@ -1,9 +1,12 @@
 import { z } from 'zod'
+import { eq } from 'drizzle-orm'
 
+import { getDb } from '@/lib/db/client'
+import { projects } from '@/lib/db/schema'
 import { apiError, asForbidden, json } from '@/lib/http/responses'
 import { requireBearer, touchDevice } from '@/lib/services/cli-auth'
 import { rotateByUri } from '@/lib/services/rotate'
-import { resolveOrCreateProject } from '@/lib/services/projects'
+import { assertCanAccessProject, resolveOrgForAccount } from '@/lib/services/projects'
 import { recordAudit } from '@/lib/services/audit'
 
 export const runtime = 'nodejs'
@@ -27,13 +30,31 @@ export async function POST(req: Request) {
     return apiError(400, 'invalid_request', 'malformed body')
   }
 
-  let project
+  let orgId: number
   try {
-    project = await resolveOrCreateProject({
-      accountId: id.account.id,
-      dotenvxProjectId: parsed.dotenvx_project_id ?? null,
-      orgSlug: parsed.org ?? null
-    })
+    if (parsed.dotenvx_project_id) {
+      const { db } = getDb()
+      const project = await db.query.projects.findFirst({
+        where: eq(projects.dotenvxProjectId, parsed.dotenvx_project_id)
+      })
+      if (!project) return apiError(404, 'not_found', 'project not found')
+      await assertCanAccessProject(id.account.id, project)
+      if (parsed.org) {
+        const scopedOrgId = await resolveOrgForAccount({
+          accountId: id.account.id,
+          orgSlug: parsed.org
+        })
+        if (scopedOrgId !== project.orgId) {
+          return apiError(400, 'invalid_request', 'org and dotenvx_project_id refer to different organizations')
+        }
+      }
+      orgId = project.orgId
+    } else {
+      orgId = await resolveOrgForAccount({
+        accountId: id.account.id,
+        orgSlug: parsed.org ?? null
+      })
+    }
   } catch (e) {
     const forbidden = asForbidden(e)
     if (forbidden) return forbidden
@@ -42,13 +63,13 @@ export async function POST(req: Request) {
 
   try {
     const result = await rotateByUri({
-      orgId: project.orgId,
+      orgId,
       uri: parsed.uri,
       newValue: parsed.new_value ?? null
     })
     if (id.device) await touchDevice(id.device.id)
     await recordAudit({
-      orgId: project.orgId,
+      orgId,
       accountId: id.account.id,
       deviceId: id.device?.id ?? null,
       kind: 'rotate',

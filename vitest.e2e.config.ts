@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -10,7 +11,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': '/Users/chris/Documents/Programming/Repos/envelops'
+      '@': path.resolve(__dirname, '.')
     }
   }
 })

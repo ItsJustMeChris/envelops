@@ -9,6 +9,8 @@ import { personalOrgForAccount } from './teams'
 export interface KeypairResult {
   public_key: string
   private_key: string
+  orgId: number
+  action: 'mint' | 'fetch'
 }
 
 export async function fetchOrMintKeypair(input: {
@@ -25,7 +27,12 @@ export async function fetchOrMintKeypair(input: {
     if (row) {
       await assertAccountCanAccessOrg(input.accountId, row.orgId)
       const priv = decryptWithMaster(row.encryptedPrivateKey)
-      return { public_key: row.publicKey, private_key: Buffer.from(priv).toString('utf8') }
+      return {
+        public_key: row.publicKey,
+        private_key: Buffer.from(priv).toString('utf8'),
+        orgId: row.orgId,
+        action: 'fetch'
+      }
     }
     // Fall through: caller passed a pubkey we've never seen. Mint a new one rather than error;
     // matches the observed commercial behavior where the server always produces a usable keypair.
@@ -41,7 +48,12 @@ export async function fetchOrMintKeypair(input: {
     encryptedPrivateKey: enc.ciphertext,
     masterKeyId: enc.masterKeyId
   })
-  return { public_key: kp.publicKey, private_key: kp.privateKey }
+  return {
+    public_key: kp.publicKey,
+    private_key: kp.privateKey,
+    orgId,
+    action: 'mint'
+  }
 }
 
 async function assertAccountCanAccessOrg(accountId: number, orgId: number): Promise<void> {

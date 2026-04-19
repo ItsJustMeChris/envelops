@@ -32,7 +32,8 @@ export async function approveDevice(formData: FormData) {
   const pending = await findPendingDeviceCodeByUserCode(raw)
   if (!pending) redirect(`/login/device?err=invalid&code=${raw}`)
   if (pending!.expiresAt.getTime() < Date.now()) redirect(`/login/device?err=expired&code=${raw}`)
-  await approveDeviceCode(pending!.id, account.id)
+  const approved = await approveDeviceCode(pending!.id, account.id)
+  if (!approved) redirect(`/login/device?err=invalid&code=${raw}`)
   revalidatePath('/login/device')
   redirect(`/login/device?ok=${raw}`)
 }

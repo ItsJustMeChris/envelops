@@ -10,7 +10,7 @@ type DrizzleDB = ReturnType<typeof drizzle<typeof schema>>
 const FILE_URL_RE = /^file:/
 
 function resolveDbPath(raw: string | undefined): string {
-  const value = raw && raw.length > 0 ? raw : 'file:./data/osops.db'
+  const value = raw && raw.length > 0 ? raw : 'file:./data/envelops.db'
   const path = value.replace(FILE_URL_RE, '')
   if (isAbsolute(path)) return resolve(path)
   const cwd = process.cwd()

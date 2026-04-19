@@ -1,5 +1,5 @@
 services:
-  osops:
+  envelops:
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -7,15 +7,18 @@ services:
     environment:
       ENVELOPS_MASTER_KEY: ${ENVELOPS_MASTER_KEY:?generate with: openssl rand -hex 32}
       ENVELOPS_BASE_URL: ${ENVELOPS_BASE_URL:-http://localhost:3000}
-      DATABASE_URL: file:/data/osops.db
+      # Caddy is the only ingress (port 3000 is `expose`, not `ports`), so
+      # X-Forwarded-For reaches us from a trusted hop and per-IP rate limits
+      # can key off it.
+      ENVELOPS_TRUST_PROXY: "1"
+      DATABASE_URL: file:/data/envelops.db
     volumes:
-      - osops-data:/data
-    ports:
-      - "3000:3000"
+      - envelops-data:/data
+    expose:
+      - "3000"
 
-  # Optional: reverse proxy for automatic TLS. Enable with `--profile tls`.
+  # Reverse proxy for automatic TLS. The app is only reachable through this.
   caddy:
-    profiles: ["tls"]
     image: caddy:2-alpine
     restart: unless-stopped
     ports:
@@ -25,9 +28,9 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
-    depends_on: [osops]
+    depends_on: [envelops]
 
 volumes:
-  osops-data:
+  envelops-data:
   caddy-data:
   caddy-config:

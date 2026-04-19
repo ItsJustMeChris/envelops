@@ -4,13 +4,20 @@ import { cookies } from 'next/headers'
 import { baseUrl } from '../config'
 import { getDb } from '../db/client'
 import { accounts, type Account } from '../db/schema'
-import { and, eq, ne } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { isSafeLocalPath } from '../http/safe-redirect'
 import { ensurePersonalOrg } from './accounts'
 import { firstAvailableSlug } from './funky-name'
 import { issueSession } from './panel-auth'
 
-const STATE_COOKIE = 'envelops_osops_gh_state'
+export class GithubEmailConflict extends Error {
+  constructor() {
+    super('github_email_conflict')
+    this.name = 'GithubEmailConflict'
+  }
+}
+
+const STATE_COOKIE = 'envelops_gh_state'
 
 export function githubEnabled(): boolean {
   return Boolean(process.env.ENVELOPS_GITHUB_CLIENT_ID && process.env.ENVELOPS_GITHUB_CLIENT_SECRET)
@@ -116,36 +123,44 @@ export async function upsertFromGithub(input: {
 }): Promise<Account> {
   const { db } = getDb()
   const email = input.primaryEmail.toLowerCase()
+  const providerRef = String(input.user.id)
   const existing = await db.query.accounts.findFirst({ where: eq(accounts.email, email) })
-  // GitHub login can collide with another account that already squats it (a
-  // local-provider signup, or a renamed GitHub account). Treat that as a normal
-  // collision and fall back to a funky 2-word handle rather than crashing on
-  // the unique constraint.
+
+  if (existing) {
+    // Refuse to silently rebind a non-GitHub account to a GitHub identity:
+    // that would rewrite fullUsername from `local/x` → `gh/<handle>` and let
+    // a GitHub-verified email bypass the fullUsername check in invite accept.
+    // The original owner must log in via their provider and link explicitly
+    // (linking UI is future work).
+    if (existing.provider !== 'github') throw new GithubEmailConflict()
+    if (existing.providerRef && existing.providerRef !== providerRef) {
+      throw new GithubEmailConflict()
+    }
+    // Existing GitHub account for this email — reuse as-is. We intentionally
+    // do NOT propagate GitHub handle renames here, because that would also
+    // rewrite fullUsername and shift which invites this account can accept.
+    const account = existing.providerRef
+      ? existing
+      : (
+          await db
+            .update(accounts)
+            .set({ providerRef })
+            .where(eq(accounts.id, existing.id))
+            .returning()
+        )[0]
+    await ensurePersonalOrg(account)
+    return account
+  }
+
   const username = await firstAvailableSlug(input.user.login, async (candidate) => {
-    const hit = await db.query.accounts.findFirst({
-      where: existing
-        ? and(eq(accounts.username, candidate), ne(accounts.id, existing.id))
-        : eq(accounts.username, candidate)
-    })
+    const hit = await db.query.accounts.findFirst({ where: eq(accounts.username, candidate) })
     return Boolean(hit)
   })
-  const fullUsername = `gh/${username}`
-
-  const account = existing
-    ? (
-        await db
-          .update(accounts)
-          .set({ username, fullUsername, provider: 'github' })
-          .where(eq(accounts.id, existing.id))
-          .returning()
-      )[0]
-    : (
-        await db
-          .insert(accounts)
-          .values({ email, username, fullUsername, provider: 'github' })
-          .returning()
-      )[0]
-
+  const inserted = await db
+    .insert(accounts)
+    .values({ email, username, fullUsername: `gh/${username}`, provider: 'github', providerRef })
+    .returning()
+  const account = inserted[0]
   await ensurePersonalOrg(account)
   return account
 }

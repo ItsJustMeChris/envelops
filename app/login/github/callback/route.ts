@@ -4,6 +4,7 @@ import {
   completeSessionForAccount,
   exchangeCode,
   fetchGithubIdentity,
+  GithubEmailConflict,
   githubEnabled,
   upsertFromGithub,
   validateStateAndRedirect
@@ -30,7 +31,10 @@ export async function GET(req: Request) {
     const identity = await fetchGithubIdentity(token)
     const account = await upsertFromGithub(identity)
     await completeSessionForAccount(account.id)
-  } catch {
+  } catch (err) {
+    if (err instanceof GithubEmailConflict) {
+      return NextResponse.redirect(new URL('/login?err=email_conflict', baseUrl()))
+    }
     return NextResponse.redirect(new URL('/login?err=oauth_failed', baseUrl()))
   }
 

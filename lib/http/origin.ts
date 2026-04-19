@@ -1,4 +1,4 @@
-import { baseUrl } from '../config'
+import { baseOrigin } from '../config'
 import { apiError } from './responses'
 
 /**
@@ -8,7 +8,7 @@ import { apiError } from './responses'
  */
 export function requireSameOrigin(req: Request): ReturnType<typeof apiError> | null {
   const origin = req.headers.get('origin')
-  if (!origin || origin !== baseUrl()) {
+  if (!origin || origin !== baseOrigin()) {
     return apiError(403, 'forbidden', 'origin mismatch')
   }
   return null

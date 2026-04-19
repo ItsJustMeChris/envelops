@@ -4,7 +4,7 @@
 //
 // Precondition: a dev server is running at $ENVELOPS_TEST_PORT (default 3100)
 // with a fresh DB. Run with:
-//   rm -f data/osops.db && npm run db:migrate
+//   rm -f data/envelops.db && npm run db:migrate
 //   ENVELOPS_BASE_URL=http://localhost:3100 PORT=3100 npm run dev &
 //   npx vitest run -c vitest.e2e.config.ts test/projects.test.ts
 

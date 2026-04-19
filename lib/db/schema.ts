@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 const now = sql`(unixepoch())`
 
@@ -9,6 +9,7 @@ export const accounts = sqliteTable('accounts', {
   username: text('username').notNull().unique(),
   fullUsername: text('full_username').notNull(),
   provider: text('provider').notNull().default('local'),
+  providerRef: text('provider_ref'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now)
 })
 
@@ -122,7 +123,11 @@ export const projects = sqliteTable(
   },
   (t) => ({
     byOrg: index('projects_org_idx').on(t.orgId),
-    byOrgDefault: index('projects_org_default_idx').on(t.orgId, t.isDefault)
+    byOrgDefault: index('projects_org_default_idx').on(t.orgId, t.isDefault),
+    visibilityCheck: check(
+      'projects_visibility_check',
+      sql`${t.visibility} IN ('team', 'restricted')`
+    )
   })
 )
 
@@ -274,6 +279,14 @@ export const syncFiles = sqliteTable(
   (t) => ({
     byEnvUri: uniqueIndex('sync_files_env_uri_idx').on(t.envUri),
     byProjectFilepath: index('sync_files_project_filepath_idx').on(t.projectId, t.filepath),
+    // Belt-and-suspenders against two concurrent syncs producing the same
+    // version number for a (projectId, filepath). Transaction serialization
+    // is the primary defense; this index guarantees the DB refuses a dupe.
+    byProjectFilepathVersion: uniqueIndex('sync_files_project_filepath_version_idx').on(
+      t.projectId,
+      t.filepath,
+      t.version
+    ),
     bySync: index('sync_files_sync_idx').on(t.syncBackupId)
   })
 )

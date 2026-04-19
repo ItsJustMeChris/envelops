@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
+import { z } from 'zod'
 
 import { currentAccount } from '@/lib/services/panel-auth'
 import { resolveTeamForAccount } from '@/lib/services/team-scope'
@@ -14,11 +15,17 @@ import { FlashCleanup } from '@/app/components/flash-cleanup'
 
 export const dynamic = 'force-dynamic'
 
+const visibilitySchema = z.enum(['team', 'restricted'])
+
 async function createProjectAction(formData: FormData) {
   'use server'
   const slug = String(formData.get('slug'))
   const name = String(formData.get('name') ?? '').trim()
-  const visibility = String(formData.get('visibility') ?? 'team') as 'team' | 'restricted'
+  const parsedVisibility = visibilitySchema.safeParse(formData.get('visibility'))
+  if (!parsedVisibility.success) {
+    redirect(`/panel/team/${slug}/projects?error=invalid_visibility`)
+  }
+  const visibility = parsedVisibility.data
   const account = await currentAccount()
   if (!account) redirect('/login')
   const team = await resolveTeamForAccount({ accountId: account.id, slug })

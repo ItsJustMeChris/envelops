@@ -1,5 +1,5 @@
 ---
-name: osops-e2e
+name: envelops-e2e
 description: Run a full end-to-end test of envelops against the real commercial `dotenvx` + `dotenvx-ops` binaries. Use when the user asks to verify the full armor flow (dotenvx encrypt → our server as keystore → dotenvx run), validate protocol compatibility end-to-end, or reproduce what the automated `test/armor.test.ts` covers. Also use when the user asks to "prove the server is the keystore" or "make sure `.env.keys` is never written."
 ---
 
@@ -53,7 +53,7 @@ Expected: `6 tests passed` across `armor.test.ts`, `integration.test.ts`, `shim.
 Use a sandboxed `HOME` so the operator's real ops session isn't touched. This is the single biggest reason ad-hoc agent runs fail — setting only `DOTENVX_OPS_HOSTNAME` + `DOTENVX_OPS_TOKEN` env vars is **not** enough because `dotenvx encrypt` invokes `dotenvx-ops status`, which reads the *session file*, not env vars.
 
 ```sh
-export SANDBOX_HOME=$(mktemp -d -t osops-e2e-XXXXX)
+export SANDBOX_HOME=$(mktemp -d -t envelops-e2e-XXXXX)
 
 # Step 1: start a device-code login in the sandbox. Capture the user_code.
 HOME=$SANDBOX_HOME dotenvx-ops login --hostname http://127.0.0.1:3100 &
@@ -86,7 +86,7 @@ If this prints `off`, the login didn't complete — every downstream assertion i
 
 Step 4: the actual armor round-trip.
 ```sh
-PROJECT=$(mktemp -d -t osops-e2e-proj-XXXXX)
+PROJECT=$(mktemp -d -t envelops-e2e-proj-XXXXX)
 echo "HELLO=$(date +%s)-sentinel" > $PROJECT/.env
 HOME=$SANDBOX_HOME dotenvx encrypt -f $PROJECT/.env
 ```

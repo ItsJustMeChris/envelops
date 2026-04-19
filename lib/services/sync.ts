@@ -35,10 +35,21 @@ export interface SyncResult {
   files: unknown
 }
 
+export class SyncPayloadError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SyncPayloadError'
+  }
+}
+
 interface DecodedFile {
   filepath: string
   src: string
 }
+
+const MAX_SYNC_FILES = 128
+const MAX_SYNC_FILEPATH_BYTES = 1024
+const MAX_SYNC_FILE_SRC_BYTES = 256 * 1024
 
 function newEnvUri(): string {
   return `dotenvx://env_${randomBytes(16).toString('hex')}`
@@ -50,11 +61,23 @@ function decodeFiles(encoded: string): DecodedFile[] {
       files?: DecodedFile[]
     }
     if (!Array.isArray(payload?.files)) return []
+    if (payload.files.length > MAX_SYNC_FILES) {
+      throw new SyncPayloadError(`files exceeds ${MAX_SYNC_FILES} entries`)
+    }
     return payload.files.filter(
       (f): f is DecodedFile =>
         typeof f?.filepath === 'string' && typeof f?.src === 'string' && f.filepath.length > 0
-    )
-  } catch {
+    ).map((f) => {
+      if (Buffer.byteLength(f.filepath, 'utf8') > MAX_SYNC_FILEPATH_BYTES) {
+        throw new SyncPayloadError(`filepath exceeds ${MAX_SYNC_FILEPATH_BYTES} bytes`)
+      }
+      if (Buffer.byteLength(f.src, 'utf8') > MAX_SYNC_FILE_SRC_BYTES) {
+        throw new SyncPayloadError(`file src exceeds ${MAX_SYNC_FILE_SRC_BYTES} bytes`)
+      }
+      return f
+    })
+  } catch (error) {
+    if (error instanceof SyncPayloadError) throw error
     return []
   }
 }
@@ -63,6 +86,7 @@ export async function recordSyncBackup(
   input: SyncInput
 ): Promise<SyncResult & { _orgId: number; _projectId: number }> {
   const { db } = getDb()
+  const files = decodeFiles(input.encoded)
   const project: Project = await resolveOrCreateProject({
     accountId: input.accountId,
     dotenvxProjectId: input.dotenvxProjectId ?? null,
@@ -91,25 +115,33 @@ export async function recordSyncBackup(
   // Decompose the payload into per-file rows so each file is independently addressable
   // via a stable `dotenvx://env_<hex>` URI. The raw blob stays on syncBackups for
   // disaster recovery / audit.
-  const files = decodeFiles(input.encoded)
-  for (const file of files) {
-    const fileEnc = encryptWithMaster(file.src)
-    const prior = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(syncFiles)
-      .where(and(eq(syncFiles.projectId, project.id), eq(syncFiles.filepath, file.filepath)))
-    const version = (prior[0]?.count ?? 0) + 1
-    await db.insert(syncFiles).values({
-      syncBackupId: row.id,
-      projectId: project.id,
-      orgId: project.orgId,
-      filepath: file.filepath,
-      version,
-      envUri: newEnvUri(),
-      encryptedContent: fileEnc.ciphertext,
-      masterKeyId: fileEnc.masterKeyId
-    })
-  }
+  db.transaction((tx) => {
+    for (const file of files) {
+      const fileEnc = encryptWithMaster(file.src)
+      // MAX(version)+1 inside a transaction — prevents two concurrent syncs of
+      // the same (projectId, filepath) from reading the same max and colliding
+      // on the same version number. The unique index on
+      // (project_id, filepath, version) is the hard guarantee.
+      const maxRow = tx
+        .select({ max: sql<number | null>`max(${syncFiles.version})` })
+        .from(syncFiles)
+        .where(and(eq(syncFiles.projectId, project.id), eq(syncFiles.filepath, file.filepath)))
+        .get()
+      const version = (maxRow?.max ?? 0) + 1
+      tx.insert(syncFiles)
+        .values({
+          syncBackupId: row.id,
+          projectId: project.id,
+          orgId: project.orgId,
+          filepath: file.filepath,
+          version,
+          envUri: newEnvUri(),
+          encryptedContent: fileEnc.ciphertext,
+          masterKeyId: fileEnc.masterKeyId
+        })
+        .run()
+    }
+  })
 
   const org = await db.query.organizations.findFirst({
     where: eq(organizations.id, project.orgId)

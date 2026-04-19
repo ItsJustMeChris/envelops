@@ -47,14 +47,16 @@ export async function POST(req: Request) {
 
   if (id.device) await touchDevice(id.device.id)
   await recordAudit({
+    orgId: result.orgId,
     accountId: id.account.id,
     deviceId: id.device?.id ?? null,
-    kind: parsed.public_key ? 'keypair.fetch' : 'keypair.mint',
+    kind: result.action === 'fetch' ? 'keypair.fetch' : 'keypair.mint',
     payload: { public_key: result.public_key },
     cliVersion: parsed.cli_version ?? null
   })
 
-  return json(result, {
+  const { orgId: _orgId, action: _action, ...wire } = result
+  return json(wire, {
     headers: { 'cache-control': 'no-store', pragma: 'no-cache' }
   })
 }

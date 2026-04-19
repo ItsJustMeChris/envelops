@@ -6,3 +6,11 @@ export function baseUrl(): string {
   if (v && v.length > 0) return v.replace(/\/$/, '')
   return 'http://localhost:3000'
 }
+
+// Canonical origin derived from baseUrl(). Goes through URL parsing so that
+// default ports (`:80`, `:443`) and casing get normalized — browsers strip
+// default ports from the `Origin` header, so a raw string compare against
+// `ENVELOPS_BASE_URL=https://host:443` would 403 every request.
+export function baseOrigin(): string {
+  return new URL(baseUrl()).origin
+}

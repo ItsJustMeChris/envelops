@@ -28,7 +28,7 @@ describe('phase 3: OSS cli shim round-trip', () => {
   let cliDir: string
 
   beforeAll(async () => {
-    cliDir = mkdtempSync(path.join(tmpdir(), 'osops-shim-'))
+    cliDir = mkdtempSync(path.join(tmpdir(), 'envelops-shim-'))
     await waitForServer(`${BASE}/`)
   }, 60_000)
 

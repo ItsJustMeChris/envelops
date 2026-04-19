@@ -1,9 +1,10 @@
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { gcm } from '@noble/ciphers/aes'
 import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils'
 
 const ENV = 'ENVELOPS_MASTER_KEY'
 const KEY_LEN = 32
+const ID_CONTEXT = 'envelops/master-key-id/v1'
 
 function parse(raw: string): Uint8Array {
   try {
@@ -15,7 +16,13 @@ function parse(raw: string): Uint8Array {
   }
 }
 
-function loadKey(): { id: string; key: Uint8Array } {
+function deriveKeyId(key: Uint8Array): string {
+  // SHA-256(context || key) prefix. Doesn't reveal any bytes of the key, unlike
+  // a raw key-prefix id.
+  return createHash('sha256').update(ID_CONTEXT).update(key).digest('hex').slice(0, 8)
+}
+
+function loadKey(): { id: string; legacyId: string; key: Uint8Array } {
   const raw = process.env[ENV]
   if (!raw) {
     // Require explicit opt-in for the deterministic dev key. Falling back on
@@ -25,16 +32,17 @@ function loadKey(): { id: string; key: Uint8Array } {
       throw new Error(`${ENV} must be set (or set ENVELOPS_DEV_MODE=1 to use the insecure dev fallback)`)
     }
     const key = utf8ToBytes('dev-master-key-not-for-production!!'.padEnd(KEY_LEN, '!')).slice(0, KEY_LEN)
-    return { id: 'dev', key }
+    return { id: 'dev', legacyId: 'dev', key }
   }
   const key = parse(raw)
   if (key.length !== KEY_LEN) throw new Error(`${ENV} must decode to ${KEY_LEN} bytes (got ${key.length})`)
-  // Short, stable identifier for the key so ciphertexts can reference which key encrypted them.
-  const id = bytesToHex(key.slice(0, 4))
-  return { id, key }
+  // `legacyId` is the pre-fix derivation (raw 4-byte prefix of the key, exposed
+  // in every ciphertext). Kept as an accepted-on-decrypt fallback so rows
+  // written under the old scheme still open; new writes use `id`.
+  return { id: deriveKeyId(key), legacyId: bytesToHex(key.slice(0, 4)), key }
 }
 
-let cached: { id: string; key: Uint8Array } | null = null
+let cached: { id: string; legacyId: string; key: Uint8Array } | null = null
 export function masterKey() {
   if (!cached) cached = loadKey()
   return cached
@@ -57,6 +65,8 @@ export function decryptWithMaster(ciphertext: string): Uint8Array {
   const parts = ciphertext.split(':')
   if (parts.length !== 3) throw new Error('bad ciphertext format')
   const [kid, nonceHex, ctHex] = parts
-  if (kid !== mk.id) throw new Error(`ciphertext bound to master key ${kid}, active is ${mk.id}`)
+  if (kid !== mk.id && kid !== mk.legacyId) {
+    throw new Error(`ciphertext bound to master key ${kid}, active is ${mk.id}`)
+  }
   return gcm(mk.key, hexToBytes(nonceHex)).decrypt(hexToBytes(ctHex))
 }

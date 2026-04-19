@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `sync_files_project_filepath_version_idx` ON `sync_files` (`project_id`,`filepath`,`version`);

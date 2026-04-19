@@ -45,12 +45,19 @@ export async function POST(req: Request) {
     throw e
   }
 
-  const row = await setSecret({
-    orgId: project.orgId,
-    projectId: project.id,
-    uri: parsed.uri,
-    value: parsed.value
-  })
+  let row
+  try {
+    row = await setSecret({
+      orgId: project.orgId,
+      projectId: project.id,
+      uri: parsed.uri,
+      value: parsed.value
+    })
+  } catch (e) {
+    const forbidden = asForbidden(e)
+    if (forbidden) return forbidden
+    throw e
+  }
 
   if (id.device) await touchDevice(id.device.id)
   await recordAudit({

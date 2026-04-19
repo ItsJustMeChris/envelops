@@ -5,6 +5,6 @@ export default {
   out: './lib/db/migrations',
   dialect: 'sqlite',
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? 'file:./data/osops.db'
+    url: process.env.DATABASE_URL ?? 'file:./data/envelops.db'
   }
 } satisfies Config

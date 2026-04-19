@@ -44,7 +44,7 @@ async function sendLink(formData: FormData) {
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ sent?: string; next?: string; error?: string }>
+  searchParams: Promise<{ sent?: string; next?: string; error?: string; err?: string }>
 }) {
   const params = await searchParams
   const email = emailEnabled()
@@ -56,6 +56,13 @@ export default async function LoginPage({
 
       {params.error === 'expired' ? (
         <p className="mb-6 text-accent">link invalid or expired. request a new one below.</p>
+      ) : null}
+
+      {params.err === 'email_conflict' ? (
+        <p className="mb-6 text-accent">
+          that github email matches an existing account created through another sign-in method.
+          sign in with your original method to keep control of the account.
+        </p>
       ) : null}
 
       {params.sent && email ? (

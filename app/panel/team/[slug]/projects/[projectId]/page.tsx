@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
 
 import { currentAccount } from '@/lib/services/panel-auth'
 import { resolveTeamForAccount } from '@/lib/services/team-scope'
@@ -19,6 +20,8 @@ import { TerminalSelect } from '@/app/components/terminal-select'
 import { FlashCleanup } from '@/app/components/flash-cleanup'
 
 export const dynamic = 'force-dynamic'
+
+const visibilitySchema = z.enum(['team', 'restricted'])
 
 function roleRank(role: 'owner' | 'admin' | 'member'): number {
   return role === 'owner' ? 0 : role === 'admin' ? 1 : 2
@@ -44,6 +47,9 @@ async function addMemberAction(formData: FormData) {
     redirect(`/panel/team/${slug}/projects?error=project_not_found`)
   }
   const targetRole = await getMemberRole({ accountId: accountIdToAdd, orgId: team.org.id })
+  if (!targetRole) {
+    redirect(`/panel/team/${slug}/projects/${projectDotenvxId}?error=target_not_team_member`)
+  }
   if (targetRole === 'owner' || targetRole === 'admin') {
     redirect(
       `/panel/team/${slug}/projects/${projectDotenvxId}?error=target_has_role_access`
@@ -83,7 +89,11 @@ async function changeVisibilityAction(formData: FormData) {
   'use server'
   const slug = String(formData.get('slug'))
   const projectDotenvxId = String(formData.get('project_dotenvx_id'))
-  const visibility = String(formData.get('visibility') ?? 'team') as 'team' | 'restricted'
+  const parsedVisibility = visibilitySchema.safeParse(formData.get('visibility'))
+  if (!parsedVisibility.success) {
+    redirect(`/panel/team/${slug}/projects/${projectDotenvxId}?error=invalid_visibility`)
+  }
+  const visibility = parsedVisibility.data
   const actor = await currentAccount()
   if (!actor) redirect('/login')
   const team = await resolveTeamForAccount({ accountId: actor.id, slug })

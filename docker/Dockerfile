@@ -20,17 +20,20 @@ RUN apk add --no-cache tini
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL=file:/data/osops.db
+ENV DATABASE_URL=file:/data/envelops.db
 
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/lib/db/migrations ./lib/db/migrations
-COPY --from=deps /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
-COPY --from=builder /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/lib/db/migrations ./lib/db/migrations
+COPY --from=deps --chown=node:node /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+COPY --from=builder --chown=node:node /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --chown=node:node docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh \
+    && mkdir -p /data \
+    && chown -R node:node /data
 
 EXPOSE 3000
 VOLUME ["/data"]
+USER node
 ENTRYPOINT ["/sbin/tini", "--", "/entrypoint.sh"]
 CMD ["node", "server.js"]

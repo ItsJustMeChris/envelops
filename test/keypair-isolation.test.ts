@@ -4,7 +4,7 @@
 //
 // Service-layer only — no HTTP, no server. Run under the e2e config alongside
 // the other suites:
-//   rm -f data/osops.db && npm run db:migrate
+//   rm -f data/envelops.db && npm run db:migrate
 //   npx vitest run -c vitest.e2e.config.ts test/keypair-isolation.test.ts
 
 import { and, eq } from 'drizzle-orm'

@@ -12,34 +12,47 @@ export async function setSecret(input: {
 }): Promise<Secret> {
   const { db } = getDb()
   const enc = encryptWithMaster(input.value)
-  const existing = await db.query.secrets.findFirst({ where: eq(secrets.uri, input.uri) })
+  // The SELECT + UPDATE/INSERT must be atomic so two concurrent writers can't
+  // both observe the same pre-image and race to overwrite each other (and, in
+  // the worst case, relabel an existing secret with a different orgId).
+  return db.transaction((tx) => {
+    const existing = tx
+      .select()
+      .from(secrets)
+      .where(eq(secrets.uri, input.uri))
+      .get()
 
-  if (existing) {
-    const updated = await db
-      .update(secrets)
-      .set({
+    if (existing) {
+      if (existing.orgId !== input.orgId) {
+        throw new Error('forbidden: secret belongs to another org')
+      }
+      const updated = tx
+        .update(secrets)
+        .set({
+          projectId: input.projectId ?? existing.projectId,
+          encryptedValue: enc.ciphertext,
+          masterKeyId: enc.masterKeyId,
+          updatedAt: new Date()
+        })
+        .where(eq(secrets.id, existing.id))
+        .returning()
+        .all()
+      return updated[0]
+    }
+
+    const inserted = tx
+      .insert(secrets)
+      .values({
         orgId: input.orgId,
-        projectId: input.projectId ?? existing.projectId,
+        projectId: input.projectId ?? null,
+        uri: input.uri,
         encryptedValue: enc.ciphertext,
-        masterKeyId: enc.masterKeyId,
-        updatedAt: new Date()
+        masterKeyId: enc.masterKeyId
       })
-      .where(eq(secrets.id, existing.id))
       .returning()
-    return updated[0]
-  }
-
-  const inserted = await db
-    .insert(secrets)
-    .values({
-      orgId: input.orgId,
-      projectId: input.projectId ?? null,
-      uri: input.uri,
-      encryptedValue: enc.ciphertext,
-      masterKeyId: enc.masterKeyId
-    })
-    .returning()
-  return inserted[0]
+      .all()
+    return inserted[0]
+  })
 }
 
 export async function getSecretValue(

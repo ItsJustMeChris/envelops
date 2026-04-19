@@ -63,7 +63,8 @@ npm run test:e2e
 | `ENVELOPS_MASTER_KEY` | yes | 32 raw bytes as hex (64 chars) or base64. Encrypts private keys at rest. Generate: `openssl rand -hex 32`. The server refuses to boot without this unless `ENVELOPS_DEV_MODE=1` is set. |
 | `ENVELOPS_DEV_MODE` | dev-only | Set to `1` to allow booting without `ENVELOPS_MASTER_KEY` using a constant, insecure dev key. Never set in production. |
 | `ENVELOPS_BASE_URL` | recommended | External URL of this server. Used in OAuth `verification_uri`. Defaults to `http://localhost:3000`. |
-| `DATABASE_URL` | no | `file:./data/osops.db` by default. Postgres URL supported (phase 2). |
+| `ENVELOPS_TRUST_PROXY` | optional | Set to `1` when running behind a trusted reverse proxy (Caddy, Cloudflare, nginx) that rewrites `X-Forwarded-For` / `X-Real-IP` / `CF-Connecting-IP`. Required for per-IP rate limiting to work. Leave unset when Next.js is exposed directly — otherwise clients can spoof these headers to bypass every rate limit. |
+| `DATABASE_URL` | no | `file:./data/envelops.db` by default. Postgres URL supported (phase 2). |
 | `ENVELOPS_GITHUB_CLIENT_ID` | optional | GitHub OAuth app client id. Enables "sign in with github" on the panel. Callback: `<ENVELOPS_BASE_URL>/login/github/callback`. |
 | `ENVELOPS_GITHUB_CLIENT_SECRET` | with above | GitHub OAuth app client secret. |
 | `ENVELOPS_MAILGUN_API_KEY` | optional | Mailgun private API key. If set together with `ENVELOPS_MAILGUN_EMAIL_DOMAIN`, login links are emailed via Mailgun; otherwise email is disabled and links are logged to stdout. |

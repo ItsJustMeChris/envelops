@@ -61,7 +61,7 @@ async function binaryExists(bin: string): Promise<boolean> {
  * test must run with this HOME so they share the session file.
  */
 async function loginInSandbox(accountId: number): Promise<{ home: string }> {
-  const home = mkdtempSync(path.join(tmpdir(), 'osops-armor-home-'))
+  const home = mkdtempSync(path.join(tmpdir(), 'envelops-armor-home-'))
   const login = spawn(OPS_BIN, ['login', '--hostname', BASE], {
     env: { ...process.env, HOME: home, DOTENVX_NO_OPS: '' },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -163,7 +163,7 @@ describe('full armor flow: dotenvx + dotenvx-ops against our server', () => {
     expect(status.stdout.trim()).toBe('on')
 
     // Prepare a fresh project directory with a plaintext .env.
-    const project = mkdtempSync(path.join(tmpdir(), 'osops-armor-proj-'))
+    const project = mkdtempSync(path.join(tmpdir(), 'envelops-armor-proj-'))
     sandboxes.push(project)
     const plainValue = `hunter2-${Date.now()}`
     writeFileSync(path.join(project, '.env'), `HELLO=${plainValue}\n`)

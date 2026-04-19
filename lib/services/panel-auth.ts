@@ -3,28 +3,43 @@ import { randomBytes } from 'node:crypto'
 import { and, eq, gt } from 'drizzle-orm'
 
 import { getDb } from '../db/client'
-import { loginLinks, sessions, type Account } from '../db/schema'
+import { accounts, loginLinks, sessions, type Account } from '../db/schema'
 import { hashToken } from '../crypto/tokens'
 import { baseUrl } from '../config'
 import { findOrCreateAccountByEmail } from './accounts'
 import { emailEnabled, sendEmail } from './email'
 import { isSafeLocalPath } from '../http/safe-redirect'
 
-const SESSION_COOKIE = 'envelops_osops_session'
+const SESSION_COOKIE = 'envelops_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14 // 14 days
 const LINK_TTL_MS = 1000 * 60 * 20 // 20 min
+
+export class MagicLinkProviderConflict extends Error {
+  constructor() {
+    super('magic_link_provider_conflict')
+    this.name = 'MagicLinkProviderConflict'
+  }
+}
 
 export async function requestLoginLink(
   email: string,
   options?: { next?: string }
 ): Promise<{ url: string; expiresAt: Date }> {
   const { db } = getDb()
+  const normalized = email.toLowerCase().trim()
   const plaintext = randomBytes(24).toString('base64url')
   const tokenHash = hashToken(plaintext)
   const expiresAt = new Date(Date.now() + LINK_TTL_MS)
 
+  const existing = await db.query.accounts.findFirst({
+    where: eq(accounts.email, normalized)
+  })
+  if (existing && existing.provider !== 'local') {
+    return { url: '', expiresAt }
+  }
+
   await db.insert(loginLinks).values({
-    email: email.toLowerCase().trim(),
+    email: normalized,
     tokenHash,
     expiresAt
   })
@@ -50,6 +65,19 @@ export async function consumeLoginLink(plaintext: string): Promise<Account | nul
   if (row.expiresAt.getTime() < Date.now()) return null
 
   await db.update(loginLinks).set({ consumedAt: new Date() }).where(eq(loginLinks.id, row.id))
+
+  const existing = await db.query.accounts.findFirst({
+    where: eq(accounts.email, row.email.toLowerCase())
+  })
+  if (existing && existing.provider !== 'local') {
+    throw new MagicLinkProviderConflict()
+  }
+
+  if (existing) {
+    await issueSession(existing.id)
+    return existing
+  }
+
   const account = await findOrCreateAccountByEmail(row.email)
   await issueSession(account.id)
   return account

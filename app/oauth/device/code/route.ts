@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { readJsonWithLimit } from '@/lib/http/body'
 import { oauthError, json } from '@/lib/http/responses'
 import { createDeviceCode } from '@/lib/services/oauth'
 import { clientIp } from '@/lib/http/client-ip'
@@ -16,6 +17,8 @@ const Body = z.object({
   dotenvx_project_id: z.string().nullable().optional()
 })
 
+const MAX_DEVICE_CODE_BODY_BYTES = 16 * 1024
+
 // Without a per-IP cap, anyone can mint unlimited pending device codes and fill
 // oauth_device_codes. Legitimate CLIs issue one per `login` invocation.
 const MINT_LIMIT = 10
@@ -31,9 +34,12 @@ export async function POST(req: Request) {
     return oauthError(429, 'slow_down', `try again in ${limited.retryAfterSeconds}s`)
   }
 
+  const body = await readJsonWithLimit(req, MAX_DEVICE_CODE_BODY_BYTES)
+  if (!body.ok) return body.res
+
   let parsed
   try {
-    parsed = Body.parse(await req.json())
+    parsed = Body.parse(body.data)
   } catch {
     return oauthError(400, 'invalid_request', 'malformed body')
   }

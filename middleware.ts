@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { baseUrl } from './lib/config'
+import { baseOrigin } from './lib/config'
 
 // Defense-in-depth CSRF backstop for Next.js server actions. Server actions
 // arrive as POSTs carrying a `Next-Action` header; cross-origin browser POSTs
@@ -12,7 +12,7 @@ import { baseUrl } from './lib/config'
 export function middleware(req: NextRequest) {
   if (req.method === 'POST' && req.headers.has('next-action')) {
     const origin = req.headers.get('origin')
-    if (!origin || origin !== baseUrl()) {
+    if (!origin || origin !== baseOrigin()) {
       return NextResponse.json(
         { error: 'forbidden', error_description: 'origin mismatch' },
         { status: 403 }

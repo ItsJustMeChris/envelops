@@ -22,13 +22,14 @@ const BEARER_FAIL_WINDOW_MS = 60_000
 
 export async function requireBearer(req: Request): Promise<BearerIdentity | null> {
   const ip = await clientIp()
+  const canBucketBySource = ip !== 'unknown'
   const failKey = `bearer-fail:${ip}`
   const failOpts = { limit: BEARER_FAIL_LIMIT, windowMs: BEARER_FAIL_WINDOW_MS }
 
-  if (!rateLimitPeek(failKey, failOpts).allowed) return null
+  if (canBucketBySource && !rateLimitPeek(failKey, failOpts).allowed) return null
 
   const identity = await lookupBearer(req)
-  if (!identity) rateLimit(failKey, failOpts)
+  if (!identity && canBucketBySource) rateLimit(failKey, failOpts)
   return identity
 }
 

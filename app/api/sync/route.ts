@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { MAX_ENCODED_BYTES, readJsonWithLimit } from '@/lib/http/body'
 import { apiError, asForbidden, json } from '@/lib/http/responses'
 import { requireBearer, touchDevice } from '@/lib/services/cli-auth'
-import { recordSyncBackup } from '@/lib/services/sync'
+import { recordSyncBackup, SyncPayloadError } from '@/lib/services/sync'
 import { recordAudit } from '@/lib/services/audit'
 
 export const runtime = 'nodejs'
@@ -60,6 +60,7 @@ export async function POST(req: Request) {
   } catch (e) {
     const forbidden = asForbidden(e)
     if (forbidden) return forbidden
+    if (e instanceof SyncPayloadError) return apiError(400, 'invalid_request', e.message)
     throw e
   }
 

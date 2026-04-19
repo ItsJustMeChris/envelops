@@ -67,9 +67,15 @@ export async function resolveOrCreateProject(input: {
   // project rather than minting a throwaway. Matches commercial behavior where the
   // first sync writes `.env.x` pinning a stable id that future calls reuse.
   if (!input.dotenvxProjectId && !input.cwdName) {
+    const existingDefault = await db.query.projects.findFirst({
+      where: and(eq(projects.orgId, orgId), eq(projects.isDefault, true))
+    })
+    if (existingDefault) return existingDefault
+    await assertCanCreateProjectInOrg(input.accountId, orgId)
     return ensureDefaultProjectForOrg(orgId)
   }
 
+  await assertCanCreateProjectInOrg(input.accountId, orgId)
   const inserted = await db
     .insert(projects)
     .values({
@@ -93,6 +99,26 @@ async function orgIdForAccountBySlug(accountId: number, slug: string): Promise<n
     .limit(1)
   if (!row[0]) throw new Error(`forbidden: not a member of org ${slug}`)
   return row[0].id
+}
+
+async function assertCanCreateProjectInOrg(accountId: number, orgId: number): Promise<void> {
+  const { db } = getDb()
+  const membership = await db.query.memberships.findFirst({
+    where: and(eq(memberships.accountId, accountId), eq(memberships.orgId, orgId))
+  })
+  if (!membership) throw new Error('forbidden: caller is not a member of the owning org')
+  if (membership.role !== 'owner' && membership.role !== 'admin') {
+    throw new Error('forbidden: owner or admin role required to create projects in this org')
+  }
+}
+
+export async function resolveOrgForAccount(input: {
+  accountId: number
+  orgSlug?: string | null
+}): Promise<number> {
+  return input.orgSlug
+    ? orgIdForAccountBySlug(input.accountId, input.orgSlug)
+    : personalOrgForAccount(input.accountId)
 }
 
 /**

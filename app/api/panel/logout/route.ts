@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { baseUrl } from '@/lib/config'
 import { requireSameOrigin } from '@/lib/http/origin'
 import { endSession } from '@/lib/services/panel-auth'
 
@@ -11,5 +12,5 @@ export async function POST(req: Request) {
   if (denied) return denied
 
   await endSession()
-  return NextResponse.redirect(new URL('/login', process.env.ENVELOPS_BASE_URL ?? 'http://localhost:3000'))
+  return NextResponse.redirect(new URL('/login', baseUrl()))
 }

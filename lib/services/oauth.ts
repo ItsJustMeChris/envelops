@@ -1,7 +1,7 @@
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, gt, isNull } from 'drizzle-orm'
 
 import { getDb } from '../db/client'
-import { oauthDeviceCodes, tokens, devices } from '../db/schema'
+import { accounts, oauthDeviceCodes, tokens, devices } from '../db/schema'
 import {
   DEVICE_CODE_POLL_INTERVAL_SECONDS,
   DEVICE_CODE_TTL_SECONDS,
@@ -54,74 +54,113 @@ export type PollOutcome =
 
 export async function redeemDeviceCode(deviceCode: string): Promise<PollOutcome> {
   const { db } = getDb()
-  const row = await db.query.oauthDeviceCodes.findFirst({
-    where: eq(oauthDeviceCodes.deviceCode, deviceCode)
-  })
-  if (!row) return { status: 'expired' }
-  if (row.consumedAt) return { status: 'consumed' }
-  if (row.expiresAt.getTime() < Date.now()) return { status: 'expired' }
-  if (!row.accountId || !row.approvedAt) return { status: 'pending' }
+  return db.transaction((tx) => {
+    const row = tx
+      .select()
+      .from(oauthDeviceCodes)
+      .where(eq(oauthDeviceCodes.deviceCode, deviceCode))
+      .get()
+    if (!row) return { status: 'expired' } satisfies PollOutcome
+    if (row.consumedAt) return { status: 'consumed' } satisfies PollOutcome
+    if (row.expiresAt.getTime() < Date.now()) return { status: 'expired' } satisfies PollOutcome
+    if (!row.accountId || !row.approvedAt) return { status: 'pending' } satisfies PollOutcome
 
-  const account = await db.query.accounts.findFirst({ where: (a, { eq }) => eq(a.id, row.accountId!) })
-  if (!account) return { status: 'expired' }
+    const account = tx
+      .select()
+      .from(accounts)
+      .where(eq(accounts.id, row.accountId))
+      .get()
+    if (!account) return { status: 'expired' } satisfies PollOutcome
 
-  // Upsert device for this account + pubkey.
-  const existingDevice = await db.query.devices.findFirst({
-    where: and(eq(devices.accountId, row.accountId), eq(devices.publicKey, row.devicePublicKey))
-  })
-  let deviceId: number
-  if (existingDevice) {
-    await db
-      .update(devices)
-      .set({ lastSeenAt: new Date(), systemInfo: row.systemInfo ?? existingDevice.systemInfo })
-      .where(eq(devices.id, existingDevice.id))
-    deviceId = existingDevice.id
-  } else {
-    const inserted = await db
-      .insert(devices)
+    // Claim the device code before minting anything. Only one poller can flip
+    // consumed_at from null -> timestamp; losers observe `consumed`.
+    const claimed = tx
+      .update(oauthDeviceCodes)
+      .set({ consumedAt: new Date() })
+      .where(
+        and(
+          eq(oauthDeviceCodes.id, row.id),
+          eq(oauthDeviceCodes.accountId, row.accountId),
+          eq(oauthDeviceCodes.approvedAt, row.approvedAt),
+          isNull(oauthDeviceCodes.consumedAt),
+          gt(oauthDeviceCodes.expiresAt, new Date())
+        )
+      )
+      .run()
+    if (claimed.changes !== 1) return { status: 'consumed' } satisfies PollOutcome
+
+    const existingDevice = tx
+      .select()
+      .from(devices)
+      .where(and(eq(devices.accountId, row.accountId), eq(devices.publicKey, row.devicePublicKey)))
+      .get()
+
+    let deviceId: number
+    if (existingDevice) {
+      tx
+        .update(devices)
+        .set({ lastSeenAt: new Date(), systemInfo: row.systemInfo ?? existingDevice.systemInfo })
+        .where(eq(devices.id, existingDevice.id))
+        .run()
+      deviceId = existingDevice.id
+    } else {
+      const inserted = tx
+        .insert(devices)
+        .values({
+          accountId: row.accountId,
+          publicKey: row.devicePublicKey,
+          systemInfo: row.systemInfo ?? null,
+          lastSeenAt: new Date()
+        })
+        .returning({ id: devices.id })
+        .all()
+      deviceId = inserted[0].id
+    }
+
+    const { plaintext, hash } = mintToken()
+    tx.insert(tokens)
       .values({
         accountId: row.accountId,
-        publicKey: row.devicePublicKey,
-        systemInfo: row.systemInfo ?? null,
-        lastSeenAt: new Date()
+        deviceId,
+        tokenHash: hash,
+        scope: 'cli'
       })
-      .returning({ id: devices.id })
-    deviceId = inserted[0].id
-  }
+      .run()
 
-  const { plaintext, hash } = mintToken()
-  await db.insert(tokens).values({
-    accountId: row.accountId,
-    deviceId,
-    tokenHash: hash,
-    scope: 'cli'
+    return {
+      status: 'authorized',
+      accessToken: plaintext,
+      accountId: account.id,
+      username: account.username,
+      fullUsername: account.fullUsername
+    } satisfies PollOutcome
   })
-
-  await db
-    .update(oauthDeviceCodes)
-    .set({ consumedAt: new Date() })
-    .where(eq(oauthDeviceCodes.id, row.id))
-
-  return {
-    status: 'authorized',
-    accessToken: plaintext,
-    accountId: account.id,
-    username: account.username,
-    fullUsername: account.fullUsername
-  }
 }
 
 export async function findPendingDeviceCodeByUserCode(userCode: string) {
   const { db } = getDb()
   return db.query.oauthDeviceCodes.findFirst({
-    where: and(eq(oauthDeviceCodes.userCode, userCode), isNull(oauthDeviceCodes.consumedAt))
+    where: and(
+      eq(oauthDeviceCodes.userCode, userCode),
+      isNull(oauthDeviceCodes.approvedAt),
+      isNull(oauthDeviceCodes.consumedAt),
+      gt(oauthDeviceCodes.expiresAt, new Date())
+    )
   })
 }
 
-export async function approveDeviceCode(id: number, accountId: number) {
+export async function approveDeviceCode(id: number, accountId: number): Promise<boolean> {
   const { db } = getDb()
-  await db
+  const result = await db
     .update(oauthDeviceCodes)
     .set({ accountId, approvedAt: new Date() })
-    .where(eq(oauthDeviceCodes.id, id))
+    .where(
+      and(
+        eq(oauthDeviceCodes.id, id),
+        isNull(oauthDeviceCodes.approvedAt),
+        isNull(oauthDeviceCodes.consumedAt),
+        gt(oauthDeviceCodes.expiresAt, new Date())
+      )
+    )
+  return result.changes === 1
 }
