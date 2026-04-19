@@ -55,27 +55,29 @@ export default async function FilesPage({
           <code>.env.x</code> pointing at this project.
         </p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="space-y-2 sm:space-y-1">
           {files.map((f, i) => (
             <li
               key={f.id}
-              className="grid grid-cols-[3rem_1fr_1fr_6rem_6rem] gap-4 items-center"
+              className="grid grid-cols-[2.5rem_1fr] gap-x-3 sm:grid-cols-[3rem_1fr_1fr_6rem_6rem] sm:gap-4 sm:items-center"
             >
               <span className="text-dim">{String(i + 1).padStart(3, '0')}.</span>
               <Link
-                className="text-accent truncate"
+                className="text-accent truncate min-w-0"
                 href={`/panel/team/${slug}/projects/${projectId}/files/${encodeURIComponent(f.filepath)}`}
               >
                 {f.filepath}
               </Link>
-              <span className="text-dim text-xs truncate">{f.envUri}</span>
-              <span className="text-dim text-xs">{f.createdAt.toISOString().slice(0, 10)}</span>
-              <Link
-                href={`/panel/team/${slug}/projects/${projectId}/files/${encodeURIComponent(f.filepath)}/raw/${f.id}`}
-                className="text-dim hover:text-fg underline text-xs text-right"
-              >
-                [details]
-              </Link>
+              <div className="col-start-2 flex flex-wrap items-center gap-x-3 gap-y-0 text-xs text-dim sm:contents">
+                <span className="truncate min-w-0">{f.envUri}</span>
+                <span>{f.createdAt.toISOString().slice(0, 10)}</span>
+                <Link
+                  href={`/panel/team/${slug}/projects/${projectId}/files/${encodeURIComponent(f.filepath)}/raw/${f.id}`}
+                  className="text-dim hover:text-fg underline sm:text-right"
+                >
+                  [details]
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

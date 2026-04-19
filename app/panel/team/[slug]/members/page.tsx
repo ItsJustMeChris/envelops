@@ -128,12 +128,17 @@ export default async function MembersPage({
         {flash.revoked ? <p className="text-accent mb-4">✔ revoked invite #{flash.revoked}</p> : null}
         {flash.error ? <p className="text-red-400 mb-4">✘ {flash.error}</p> : null}
 
-        <ul className="space-y-1">
+        <ul className="space-y-2 sm:space-y-1">
           {members.map((m) => (
-            <li key={m.accountId} className="grid grid-cols-[1fr_10rem_6rem] gap-4">
-              <span>{m.email}</span>
-              <span className="text-dim">{m.username}</span>
-              <span className={m.role === 'owner' ? 'text-accent' : 'text-dim'}>{m.role}</span>
+            <li
+              key={m.accountId}
+              className="block sm:grid sm:grid-cols-[1fr_10rem_6rem] sm:gap-4"
+            >
+              <span className="block break-all">{m.email}</span>
+              <div className="flex gap-3 text-xs text-dim sm:contents">
+                <span className="sm:text-sm sm:text-dim">{m.username}</span>
+                <span className={m.role === 'owner' ? 'text-accent' : 'sm:text-dim'}>{m.role}</span>
+              </div>
             </li>
           ))}
         </ul>
@@ -160,14 +165,14 @@ export default async function MembersPage({
                 </p>
                 <form action={inviteAction} className="space-y-3">
                   <input type="hidden" name="slug" value={slug} />
-                  <div className={`grid gap-3 ${emailOn && githubOn ? 'grid-cols-[1fr_1fr_6rem_auto]' : 'grid-cols-[1fr_6rem_auto]'}`}>
+                  <div className={`grid gap-3 grid-cols-1 ${emailOn && githubOn ? 'sm:grid-cols-[1fr_1fr_6rem_auto]' : 'sm:grid-cols-[1fr_6rem_auto]'}`}>
                     {emailOn ? (
                       <input
                         name="email"
                         type="email"
                         placeholder={githubOn ? 'email (optional)' : 'email'}
                         required={!githubOn}
-                        className="bg-transparent border border-rule px-3 py-1.5"
+                        className="bg-transparent border border-rule px-3 py-2 sm:py-1.5 min-w-0"
                       />
                     ) : null}
                     {githubOn ? (
@@ -175,7 +180,7 @@ export default async function MembersPage({
                         name="github_username"
                         placeholder={emailOn ? 'github username (optional)' : 'github username'}
                         required={!emailOn}
-                        className="bg-transparent border border-rule px-3 py-1.5"
+                        className="bg-transparent border border-rule px-3 py-2 sm:py-1.5 min-w-0"
                         autoComplete="off"
                       />
                     ) : null}
@@ -192,7 +197,7 @@ export default async function MembersPage({
                           : [])
                       ]}
                     />
-                    <button className="border border-accent text-accent px-4 py-1.5 hover:bg-accent/10">
+                    <button className="border border-accent text-accent px-4 py-2 sm:py-1.5 hover:bg-accent/10">
                       create invite
                     </button>
                   </div>
@@ -211,18 +216,18 @@ export default async function MembersPage({
             {invitesList.length === 0 ? (
               <p className="text-dim">ø none pending</p>
             ) : (
-              <ul className="space-y-1">
+              <ul className="space-y-2 sm:space-y-1">
                 {invitesList.map((inv) => (
                   <li
                     key={inv.id}
-                    className="grid grid-cols-[1fr_6rem_10rem_5rem] gap-4 items-center"
+                    className="grid grid-cols-[1fr_auto] gap-x-3 sm:grid-cols-[1fr_6rem_10rem_5rem] sm:gap-4 sm:items-center"
                   >
-                    <span>{inviteSubjectLabel(inv)}</span>
-                    <span className="text-dim">{inv.role}</span>
-                    <span className="text-dim text-xs">
+                    <span className="truncate min-w-0">{inviteSubjectLabel(inv)}</span>
+                    <span className="text-dim text-xs sm:text-sm sm:text-right sm:text-dim">{inv.role}</span>
+                    <span className="col-start-1 text-dim text-xs sm:col-start-auto sm:text-left">
                       expires {inv.expiresAt.toISOString().slice(0, 10)}
                     </span>
-                    <form action={revokeAction}>
+                    <form action={revokeAction} className="justify-self-end sm:justify-self-auto">
                       <input type="hidden" name="slug" value={slug} />
                       <input type="hidden" name="invite_id" value={inv.id} />
                       <button className="text-dim hover:text-fg underline text-xs">[revoke]</button>

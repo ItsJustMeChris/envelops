@@ -81,3 +81,8 @@ a:hover { color: theme('colors.accent'); }
   color: theme('colors.fg');
   font-family: theme('fontFamily.mono');
 }
+
+/* Hide scrollbar chrome on horizontal scroll regions (mobile nav strips, etc.)
+   while keeping the area scrollable. Firefox + WebKit only. */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }

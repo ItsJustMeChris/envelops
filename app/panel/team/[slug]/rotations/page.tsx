@@ -25,15 +25,20 @@ export default async function RotationsPage({ params }: { params: Promise<{ slug
         {rotations.length === 0 ? (
           <p className="text-dim">ø no rotation references yet</p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-2 sm:space-y-1">
             {rotations.map((r, i) => (
-              <li key={r.id} className="grid grid-cols-[3rem_1fr_10rem_10rem] gap-4">
+              <li
+                key={r.id}
+                className="grid grid-cols-[2.5rem_1fr] gap-x-3 sm:grid-cols-[3rem_1fr_10rem_10rem] sm:gap-4 sm:items-center"
+              >
                 <span className="text-dim">{String(i + 1).padStart(3, '0')}.</span>
-                <span className="text-accent truncate">{r.uri}</span>
-                <span className="text-dim text-xs">
-                  {r.lastRotatedAt ? `rotated ${r.lastRotatedAt.toISOString().slice(0, 10)}` : '—'}
-                </span>
-                <span className="text-dim text-xs">created {r.createdAt.toISOString().slice(0, 10)}</span>
+                <span className="text-accent truncate min-w-0">{r.uri}</span>
+                <div className="col-start-2 flex flex-wrap gap-3 text-xs text-dim sm:contents">
+                  <span>
+                    {r.lastRotatedAt ? `rotated ${r.lastRotatedAt.toISOString().slice(0, 10)}` : '—'}
+                  </span>
+                  <span>created {r.createdAt.toISOString().slice(0, 10)}</span>
+                </div>
               </li>
             ))}
           </ul>
@@ -48,12 +53,17 @@ export default async function RotationsPage({ params }: { params: Promise<{ slug
             work today, automated rotation lands in a future release.
           </p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-2 sm:space-y-1">
             {connectors.map((c) => (
-              <li key={c.id} className="grid grid-cols-[8rem_1fr_10rem] gap-4">
+              <li
+                key={c.id}
+                className="grid grid-cols-[1fr_auto] gap-x-3 sm:grid-cols-[8rem_1fr_10rem] sm:gap-4 sm:items-center"
+              >
                 <span className="text-accent">{c.provider}</span>
-                <span className="text-dim">{c.label ?? '—'}</span>
-                <span className="text-dim text-xs">created {c.createdAt.toISOString().slice(0, 10)}</span>
+                <span className="text-dim truncate min-w-0 text-right sm:text-left">{c.label ?? '—'}</span>
+                <span className="col-span-2 text-dim text-xs sm:col-span-1">
+                  created {c.createdAt.toISOString().slice(0, 10)}
+                </span>
               </li>
             ))}
           </ul>

@@ -22,12 +22,12 @@ export default async function TeamLayout({
 
   return (
     <section>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <div className="text-accent text-lg">{team.org.slug}</div>
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-accent text-lg truncate">{team.org.slug}</div>
           <div className="text-dim text-xs">role: {team.role}</div>
         </div>
-        <nav className="space-x-4">
+        <nav className="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto whitespace-nowrap space-x-4 scrollbar-none">
           <Link href={`/panel/team/${slug}`}>keys</Link>
           <Link href={`/panel/team/${slug}/projects`}>projects</Link>
           <Link href={`/panel/team/${slug}/secrets`}>secrets</Link>

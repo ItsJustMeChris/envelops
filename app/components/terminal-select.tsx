@@ -101,7 +101,7 @@ export function TerminalSelect({
         aria-controls={listId}
         onKeyDown={onKeyDown}
         onClick={() => setOpen((o) => !o)}
-        className="select-terminal w-full text-left border border-rule px-3 py-1.5"
+        className="select-terminal w-full text-left border border-rule px-3 py-2 sm:py-1.5"
       >
         {label || <span className="text-dim">{placeholder ?? '—'}</span>}
       </button>
@@ -129,7 +129,7 @@ export function TerminalSelect({
                   e.preventDefault()
                   commit(i)
                 }}
-                className={`px-3 py-1.5 cursor-pointer flex items-center gap-2 ${
+                className={`px-3 py-2 sm:py-1.5 cursor-pointer flex items-center gap-2 ${
                   isActive ? 'bg-accent text-bg' : isSelected ? 'text-accent' : 'text-fg'
                 }`}
               >

@@ -42,19 +42,21 @@ export function KeyRow({
   const shown = revealed ?? '•'.repeat(64)
 
   return (
-    <li className="grid grid-cols-[3rem_12ch_1fr_5rem] gap-4 items-center">
+    <li className="grid grid-cols-[2.5rem_1fr_auto] gap-x-3 sm:grid-cols-[3rem_12ch_1fr_5rem] sm:gap-4 sm:items-center">
       <span className="text-dim">{String(index).padStart(3, '0')}.</span>
-      <span className="text-fg">{prefix}…</span>
-      <span className={revealed ? 'text-accent break-all' : 'text-dim tracking-widest truncate'}>{shown}</span>
+      <span className="text-fg truncate min-w-0">{prefix}…</span>
       <button
-        className="text-dim hover:text-fg underline text-xs"
+        className="text-dim hover:text-fg underline text-xs justify-self-end sm:justify-self-auto sm:order-last"
         onClick={toggle}
         disabled={loading}
         title={createdAt}
       >
         [{loading ? '…' : revealed ? 'hide' : 'show'}]
       </button>
-      {error ? <span className="col-span-4 text-red-400 text-xs">{error}</span> : null}
+      <span className={`col-start-1 col-span-3 sm:col-span-1 sm:col-start-auto ${revealed ? 'text-accent break-all' : 'text-dim tracking-widest truncate'}`}>
+        {shown}
+      </span>
+      {error ? <span className="col-span-3 sm:col-span-4 text-red-400 text-xs">{error}</span> : null}
     </li>
   )
 }

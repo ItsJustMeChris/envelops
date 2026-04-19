@@ -48,8 +48,8 @@ export default async function SyncHistoryPage({
       {history.length === 0 ? (
         <p className="text-dim">ø no syncs yet</p>
       ) : (
-        <ul className="space-y-1">
-          <li className="grid grid-cols-[4rem_6rem_10rem_8rem_6rem_8rem] gap-4 items-center text-dim text-xs uppercase tracking-wide">
+        <ul className="space-y-3 sm:space-y-1">
+          <li className="hidden sm:grid sm:grid-cols-[4rem_6rem_10rem_8rem_6rem_8rem] sm:gap-4 sm:items-center text-dim text-xs uppercase tracking-wide">
             <span>#</span>
             <span>kind</span>
             <span>user</span>
@@ -60,13 +60,13 @@ export default async function SyncHistoryPage({
           {history.map((s) => (
             <li
               key={s.id}
-              className="grid grid-cols-[4rem_6rem_10rem_8rem_6rem_8rem] gap-4 items-center"
+              className="grid grid-cols-2 gap-x-3 gap-y-0.5 sm:grid-cols-[4rem_6rem_10rem_8rem_6rem_8rem] sm:gap-4 sm:items-center border-b border-rule pb-2 last:border-0 sm:border-0 sm:pb-0"
             >
               <span className="text-dim">#{s.id}</span>
-              <span className={s.kind === 'backup' ? 'text-dim' : 'text-accent'}>{s.kind}</span>
-              <span className="text-dim text-xs truncate">{s.username ?? '—'}</span>
-              <span className="text-dim text-xs truncate">{s.gitBranch ?? '—'}</span>
-              <span className="text-dim text-xs truncate">{s.cliVersion ?? '—'}</span>
+              <span className={`${s.kind === 'backup' ? 'text-dim' : 'text-accent'} sm:text-sm text-right sm:text-left`}>{s.kind}</span>
+              <span className="text-dim text-xs truncate min-w-0">{s.username ?? '—'}</span>
+              <span className="text-dim text-xs truncate min-w-0 sm:text-left text-right">{s.gitBranch ?? '—'}</span>
+              <span className="text-dim text-xs truncate min-w-0">{s.cliVersion ?? '—'}</span>
               <span className="text-dim text-xs text-right">
                 {s.createdAt.toISOString().replace('T', ' ').slice(0, 16)}
               </span>

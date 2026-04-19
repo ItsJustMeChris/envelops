@@ -27,12 +27,17 @@ export default async function SecretsPage({ params }: { params: Promise<{ slug: 
   return (
     <div>
       <h2 className="mb-4">secrets</h2>
-      <ul className="space-y-1">
+      <ul className="space-y-2 sm:space-y-1">
         {rows.map((s, i) => (
-          <li key={s.id} className="grid grid-cols-[3rem_1fr_10rem] gap-4">
+          <li
+            key={s.id}
+            className="grid grid-cols-[2.5rem_1fr] gap-x-3 sm:grid-cols-[3rem_1fr_10rem] sm:gap-4 sm:items-center"
+          >
             <span className="text-dim">{String(i + 1).padStart(3, '0')}.</span>
-            <span className="text-accent truncate">{s.uri}</span>
-            <span className="text-dim text-xs text-right">{s.updatedAt.toISOString()}</span>
+            <span className="text-accent truncate min-w-0">{s.uri}</span>
+            <span className="col-start-2 text-dim text-xs break-all sm:col-start-auto sm:text-right">
+              {s.updatedAt.toISOString()}
+            </span>
           </li>
         ))}
       </ul>

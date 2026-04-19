@@ -16,22 +16,22 @@ async function currentHostname(): Promise<string> {
 export default async function Home() {
   const hostname = await currentHostname()
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
+    <main className="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
       <h1 className="text-accent text-lg mb-4">envelops</h1>
       <div className="rule mb-8" />
       <p className="mb-4">self-hosted open-source ops panel for dotenvx.</p>
       <p className="text-dim mb-6">point your <code>dotenvx-ops</code> cli at this instance:</p>
 
       <div className="space-y-3 mb-10">
-        <pre className="border border-rule px-4 py-3 overflow-x-auto"><code><span className="text-dim">$ </span>DOTENVX_OPS_HOSTNAME=<span className="text-accent">{hostname}</span> dotenvx-ops login</code></pre>
+        <pre className="border border-rule px-3 sm:px-4 py-3 overflow-x-auto text-xs sm:text-sm"><code><span className="text-dim">$ </span>DOTENVX_OPS_HOSTNAME=<span className="text-accent">{hostname}</span> dotenvx-ops login</code></pre>
 
         <div className="text-dim text-center">— or —</div>
 
-        <pre className="border border-rule px-4 py-3 overflow-x-auto"><code><span className="text-dim">$ </span>dotenvx-ops login --hostname <span className="text-accent">{hostname}</span></code></pre>
+        <pre className="border border-rule px-3 sm:px-4 py-3 overflow-x-auto text-xs sm:text-sm"><code><span className="text-dim">$ </span>dotenvx-ops login --hostname <span className="text-accent">{hostname}</span></code></pre>
 
         <div className="text-dim text-center">— or —</div>
 
-        <pre className="border border-rule px-4 py-3 overflow-x-auto"><code><span className="text-dim">$ </span>echo <span className="text-accent">{`'DOTENVX_OPS_HOSTNAME=${hostname}'`}</span>{' >> '}~/Library/Preferences/dotenvx/.env</code></pre>
+        <pre className="border border-rule px-3 sm:px-4 py-3 overflow-x-auto text-xs sm:text-sm"><code><span className="text-dim">$ </span>echo <span className="text-accent">{`'DOTENVX_OPS_HOSTNAME=${hostname}'`}</span>{' >> '}~/Library/Preferences/dotenvx/.env</code></pre>
       </div>
 
       <div className="rule mb-6" />

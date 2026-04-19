@@ -68,26 +68,28 @@ export default async function ProjectsPage({
         {rows.length === 0 ? (
           <p className="text-dim">ø no projects yet</p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-2 sm:space-y-1">
             {rows.map((p, i) => (
               <li
                 key={p.id}
-                className="grid grid-cols-[3rem_1fr_8rem_8rem] gap-4 items-center"
+                className="grid grid-cols-[2.5rem_1fr] gap-x-3 sm:grid-cols-[3rem_1fr_8rem_8rem] sm:gap-4 sm:items-center"
               >
                 <span className="text-dim">{String(i + 1).padStart(3, '0')}.</span>
                 <Link
                   href={`/panel/team/${slug}/projects/${p.dotenvxProjectId}`}
-                  className="text-accent truncate"
+                  className="text-accent truncate min-w-0"
                 >
                   {projectDisplayName(p)}
                   {p.isDefault ? <span className="text-dim ml-2">(default)</span> : null}
                 </Link>
-                <span className={p.visibility === 'team' ? 'text-dim' : 'text-accent'}>
-                  {p.visibility}
-                </span>
-                <span className="text-dim text-xs text-right">
-                  {p.createdAt.toISOString().slice(0, 10)}
-                </span>
+                <div className="col-start-2 flex gap-3 text-xs text-dim sm:contents">
+                  <span className={`sm:text-sm ${p.visibility === 'team' ? 'sm:text-dim' : 'sm:text-accent'}`}>
+                    {p.visibility}
+                  </span>
+                  <span className="sm:text-dim sm:text-xs sm:text-right">
+                    {p.createdAt.toISOString().slice(0, 10)}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
@@ -99,12 +101,12 @@ export default async function ProjectsPage({
           <h3 className="mb-4">create project</h3>
           <form action={createProjectAction} className="space-y-3">
             <input type="hidden" name="slug" value={slug} />
-            <div className="grid grid-cols-[1fr_10rem_auto] gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_10rem_auto] gap-3">
               <input
                 name="name"
                 required
                 placeholder="name (e.g. ios-app)"
-                className="bg-transparent border border-rule px-3 py-1.5"
+                className="bg-transparent border border-rule px-3 py-2 sm:py-1.5 min-w-0"
               />
               <TerminalSelect
                 name="visibility"
@@ -114,7 +116,7 @@ export default async function ProjectsPage({
                   { value: 'restricted', label: 'restricted' }
                 ]}
               />
-              <button className="border border-accent text-accent px-4 py-1.5 hover:bg-accent/10">
+              <button className="border border-accent text-accent px-4 py-2 sm:py-1.5 hover:bg-accent/10">
                 create
               </button>
             </div>

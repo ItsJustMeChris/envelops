@@ -180,9 +180,9 @@ export default async function ProjectDetailPage({
         ) : null}
         {flash.error ? <p className="text-red-400 mb-4">✘ {flash.error}</p> : null}
 
-        <dl className="grid grid-cols-[10rem_1fr] gap-2">
+        <dl className="grid grid-cols-[6rem_1fr] sm:grid-cols-[10rem_1fr] gap-x-4 gap-y-2">
           <dt className="text-dim">id</dt>
-          <dd>{project.dotenvxProjectId}</dd>
+          <dd className="break-all">{project.dotenvxProjectId}</dd>
           <dt className="text-dim">visibility</dt>
           <dd className={project.visibility === 'team' ? 'text-fg' : 'text-accent'}>
             {project.visibility}
@@ -199,14 +199,14 @@ export default async function ProjectDetailPage({
           drop this file at the root of any project directory that should sync/encrypt against
           this project.
         </p>
-        <pre className="border border-rule px-4 py-3 overflow-x-auto whitespace-pre-wrap"><code><span className="text-dim">{envXComment}</span>{'\n'}DOTENVX_PROJECT_ID=<span className="text-accent">{project.dotenvxProjectId}</span></code></pre>
+        <pre className="border border-rule px-3 sm:px-4 py-3 overflow-x-auto whitespace-pre-wrap break-all text-xs sm:text-sm"><code><span className="text-dim">{envXComment}</span>{'\n'}DOTENVX_PROJECT_ID=<span className="text-accent">{project.dotenvxProjectId}</span></code></pre>
       </section>
 
       {manageable ? (
         <>
           <section>
             <h3 className="mb-4">visibility</h3>
-            <form action={changeVisibilityAction} className="flex items-center gap-3">
+            <form action={changeVisibilityAction} className="flex flex-col sm:flex-row sm:items-center gap-3">
               <input type="hidden" name="slug" value={slug} />
               <input
                 type="hidden"
@@ -221,7 +221,7 @@ export default async function ProjectDetailPage({
                   { value: 'restricted', label: 'restricted' }
                 ]}
               />
-              <button className="border border-rule px-3 py-1.5 hover:border-accent hover:text-accent">
+              <button className="border border-rule px-3 py-2 sm:py-1.5 hover:border-accent hover:text-accent">
                 save
               </button>
             </form>
@@ -238,18 +238,17 @@ export default async function ProjectDetailPage({
                 {projectMembers.length === 0 ? (
                   <p className="text-dim">ø no members granted yet</p>
                 ) : (
-                  <ul className="space-y-1">
+                  <ul className="space-y-2 sm:space-y-1">
                     {projectMembers.map((m) => (
                       <li
                         key={m.accountId}
-                        className="grid grid-cols-[1fr_10rem_5rem] gap-4 items-center"
+                        className="grid grid-cols-[1fr_auto] gap-x-3 sm:grid-cols-[1fr_10rem_5rem] sm:gap-4 sm:items-center"
                       >
-                        <span>{m.email}</span>
-                        <span className="text-dim">{m.username}</span>
+                        <span className="truncate min-w-0">{m.email}</span>
                         {m.accountId === account.id ? (
-                          <span className="text-dim text-xs">(you)</span>
+                          <span className="text-dim text-xs justify-self-end sm:justify-self-auto sm:order-last">(you)</span>
                         ) : (
-                          <form action={removeMemberAction}>
+                          <form action={removeMemberAction} className="justify-self-end sm:justify-self-auto sm:order-last">
                             <input type="hidden" name="slug" value={slug} />
                             <input
                               type="hidden"
@@ -262,6 +261,9 @@ export default async function ProjectDetailPage({
                             </button>
                           </form>
                         )}
+                        <span className="text-dim text-xs col-start-1 sm:col-start-auto sm:text-sm">
+                          {m.username}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -271,7 +273,7 @@ export default async function ProjectDetailPage({
               {addableMembers.length > 0 ? (
                 <section>
                   <h3 className="mb-4">grant access</h3>
-                  <form action={addMemberAction} className="flex items-center gap-3">
+                  <form action={addMemberAction} className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <input type="hidden" name="slug" value={slug} />
                     <input
                       type="hidden"
@@ -281,13 +283,13 @@ export default async function ProjectDetailPage({
                     <TerminalSelect
                       name="account_id"
                       required
-                      className="flex-1"
+                      className="sm:flex-1 min-w-0"
                       options={addableMembers.map((m) => ({
                         value: String(m.accountId),
                         label: `${m.email} (${m.role})`
                       }))}
                     />
-                    <button className="border border-accent text-accent px-4 py-1.5 hover:bg-accent/10">
+                    <button className="border border-accent text-accent px-4 py-2 sm:py-1.5 hover:bg-accent/10">
                       grant
                     </button>
                   </form>
@@ -304,19 +306,21 @@ export default async function ProjectDetailPage({
               {allTeamMembers.length === 0 ? (
                 <p className="text-dim">ø no team members</p>
               ) : (
-                <ul className="space-y-1">
+                <ul className="space-y-2 sm:space-y-1">
                   {[...allTeamMembers]
                     .sort((a, b) => roleRank(a.role) - roleRank(b.role) || a.email.localeCompare(b.email))
                     .map((m) => (
                       <li
                         key={m.accountId}
-                        className="grid grid-cols-[1fr_10rem_6rem] gap-4 items-center"
+                        className="block sm:grid sm:grid-cols-[1fr_10rem_6rem] sm:gap-4"
                       >
-                        <span>{m.email}</span>
-                        <span className="text-dim">{m.username}</span>
-                        <span className={m.role === 'owner' ? 'text-accent' : 'text-dim'}>
-                          {m.role}
-                        </span>
+                        <span className="block break-all">{m.email}</span>
+                        <div className="flex gap-3 text-xs text-dim sm:contents">
+                          <span className="sm:text-sm sm:text-dim">{m.username}</span>
+                          <span className={m.role === 'owner' ? 'text-accent' : 'sm:text-dim'}>
+                            {m.role}
+                          </span>
+                        </div>
                       </li>
                     ))}
                 </ul>
