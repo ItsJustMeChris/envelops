@@ -1,0 +1,1 @@
+ALTER TABLE `sync_files` ADD `version` integer DEFAULT 1 NOT NULL;

@@ -147,15 +147,46 @@ async function finaliseAccept(
   return { accountId: account.id, orgId, orgSlug: org!.slug }
 }
 
-export async function requireOwnerOrAdmin(input: {
+export async function getMemberRole(input: {
   accountId: number
   orgId: number
-}): Promise<boolean> {
+}): Promise<'owner' | 'admin' | 'member' | null> {
   const { db } = getDb()
   const row = await db.query.memberships.findFirst({
     where: and(eq(memberships.accountId, input.accountId), eq(memberships.orgId, input.orgId))
   })
-  return Boolean(row && (row.role === 'owner' || row.role === 'admin'))
+  return row ? row.role : null
+}
+
+export async function requireOwnerOrAdmin(input: {
+  accountId: number
+  orgId: number
+}): Promise<boolean> {
+  const role = await getMemberRole(input)
+  return role === 'owner' || role === 'admin'
+}
+
+export async function requireOwner(input: {
+  accountId: number
+  orgId: number
+}): Promise<boolean> {
+  return (await getMemberRole(input)) === 'owner'
+}
+
+/**
+ * Enforces the promotion rule: only team owners can mint new admins or owners.
+ * Admins may still invite plain members, but they can't grow the leadership ranks.
+ */
+export async function canInviteWithRole(input: {
+  actorId: number
+  orgId: number
+  targetRole: 'owner' | 'admin' | 'member'
+}): Promise<boolean> {
+  const actorRole = await getMemberRole({ accountId: input.actorId, orgId: input.orgId })
+  if (!actorRole) return false
+  if (input.targetRole === 'member') return actorRole === 'owner' || actorRole === 'admin'
+  // Admin or owner target — only owners can issue.
+  return actorRole === 'owner'
 }
 
 export interface MemberRow {

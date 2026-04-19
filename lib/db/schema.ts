@@ -111,10 +111,36 @@ export const projects = sqliteTable(
       .references(() => organizations.id, { onDelete: 'cascade' }),
     dotenvxProjectId: text('dotenvx_project_id').notNull().unique(),
     name: text('name'),
+    // `team`       = any member of the org has access (the team-wide default)
+    // `restricted` = only members listed in project_access (owners/admins override)
+    visibility: text('visibility', { enum: ['team', 'restricted'] }).notNull().default('team'),
+    // Exactly one is_default=true per org — the auto-created team-wide project so
+    // a user can sync/encrypt without pre-creating anything.
+    isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false),
+    createdBy: integer('created_by').references(() => accounts.id, { onDelete: 'set null' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now)
   },
   (t) => ({
-    byOrg: index('projects_org_idx').on(t.orgId)
+    byOrg: index('projects_org_idx').on(t.orgId),
+    byOrgDefault: index('projects_org_default_idx').on(t.orgId, t.isDefault)
+  })
+)
+
+export const projectAccess = sqliteTable(
+  'project_access',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    accountId: integer('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now)
+  },
+  (t) => ({
+    unique: uniqueIndex('project_access_project_account_idx').on(t.projectId, t.accountId),
+    byProject: index('project_access_project_idx').on(t.projectId)
   })
 )
 
@@ -221,6 +247,37 @@ export const secrets = sqliteTable(
   })
 )
 
+export const syncFiles = sqliteTable(
+  'sync_files',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    syncBackupId: integer('sync_backup_id')
+      .notNull()
+      .references(() => syncBackups.id, { onDelete: 'cascade' }),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    orgId: integer('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    filepath: text('filepath').notNull(),
+    // Monotonic per-(projectId, filepath) counter starting at 1. Assigned at
+    // insert time and surfaced in the sync response so clients can detect stale
+    // local state. Matches the `version` field the commercial server emits.
+    version: integer('version').notNull().default(1),
+    // `env_<hex>` URI addressable via POST /api/get
+    envUri: text('env_uri').notNull().unique(),
+    encryptedContent: text('encrypted_content').notNull(),
+    masterKeyId: text('master_key_id').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now)
+  },
+  (t) => ({
+    byEnvUri: uniqueIndex('sync_files_env_uri_idx').on(t.envUri),
+    byProjectFilepath: index('sync_files_project_filepath_idx').on(t.projectId, t.filepath),
+    bySync: index('sync_files_sync_idx').on(t.syncBackupId)
+  })
+)
+
 export const syncBackups = sqliteTable(
   'sync_backups',
   {
@@ -308,12 +365,14 @@ export type Device = typeof devices.$inferSelect
 export type Token = typeof tokens.$inferSelect
 export type OAuthDeviceCode = typeof oauthDeviceCodes.$inferSelect
 export type Project = typeof projects.$inferSelect
+export type ProjectAccess = typeof projectAccess.$inferSelect
 export type Keypair = typeof keypairs.$inferSelect
 export type AuditEvent = typeof auditEvents.$inferSelect
 export type Session = typeof sessions.$inferSelect
 export type LoginLink = typeof loginLinks.$inferSelect
 export type Secret = typeof secrets.$inferSelect
 export type SyncBackup = typeof syncBackups.$inferSelect
+export type SyncFile = typeof syncFiles.$inferSelect
 export type Invite = typeof invites.$inferSelect
 export type RotationConnector = typeof rotationConnectors.$inferSelect
 export type Rotation = typeof rotations.$inferSelect

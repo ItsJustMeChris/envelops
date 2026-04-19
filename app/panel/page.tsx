@@ -1,16 +1,21 @@
 import { redirect } from 'next/navigation'
+import { eq } from 'drizzle-orm'
 
 import { currentAccount } from '@/lib/services/panel-auth'
-import { listAccountOrganizations } from '@/lib/services/accounts'
+import { personalOrgForAccount } from '@/lib/services/teams'
+import { getDb } from '@/lib/db/client'
+import { organizations } from '@/lib/db/schema'
 
 export const dynamic = 'force-dynamic'
 
 export default async function PanelIndex() {
   const account = await currentAccount()
   if (!account) redirect('/login?next=/panel')
-  const orgs = await listAccountOrganizations(account.id)
-  const primary = orgs[0]
-  if (primary) redirect(`/panel/team/${primary.slug}`)
+
+  const orgId = await personalOrgForAccount(account.id)
+  const { db } = getDb()
+  const org = await db.query.organizations.findFirst({ where: eq(organizations.id, orgId) })
+  if (org) redirect(`/panel/team/${org.slug}`)
 
   return (
     <section>

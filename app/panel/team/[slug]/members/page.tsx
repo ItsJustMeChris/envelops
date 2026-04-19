@@ -3,7 +3,9 @@ import { notFound, redirect } from 'next/navigation'
 import { currentAccount } from '@/lib/services/panel-auth'
 import { resolveTeamForAccount } from '@/lib/services/team-scope'
 import {
+  canInviteWithRole,
   createInvite,
+  getMemberRole,
   inviteSubjectLabel,
   listActiveInvitesForOrg,
   listMembers,
@@ -31,6 +33,15 @@ async function inviteAction(formData: FormData) {
 
   if (!email && !githubUsername) {
     redirect(`/panel/team/${slug}/members?error=invite_requires_identifier`)
+  }
+
+  const allowedRole = await canInviteWithRole({
+    actorId: account.id,
+    orgId: team.org.id,
+    targetRole: role
+  })
+  if (!allowedRole) {
+    redirect(`/panel/team/${slug}/members?error=only_owners_can_promote`)
   }
 
   const { url } = await createInvite({
@@ -85,6 +96,8 @@ export default async function MembersPage({
   if (!team) notFound()
 
   const manageable = await requireOwnerOrAdmin({ accountId: account.id, orgId: team.org.id })
+  const actorRole = await getMemberRole({ accountId: account.id, orgId: team.org.id })
+  const canPromote = actorRole === 'owner'
   const [members, invitesList] = await Promise.all([
     listMembers(team.org.id),
     listActiveInvitesForOrg(team.org.id)
@@ -145,13 +158,18 @@ export default async function MembersPage({
                   className="bg-transparent border border-rule px-2 py-1.5"
                 >
                   <option value="member">member</option>
-                  <option value="admin">admin</option>
-                  <option value="owner">owner</option>
+                  {canPromote ? <option value="admin">admin</option> : null}
+                  {canPromote ? <option value="owner">owner</option> : null}
                 </select>
                 <button className="border border-accent text-accent px-4 py-1.5 hover:bg-accent/10">
                   create invite
                 </button>
               </div>
+              {!canPromote ? (
+                <p className="text-dim text-xs">
+                  only team owners can invite admins or owners. admins can invite plain members.
+                </p>
+              ) : null}
             </form>
           </section>
 

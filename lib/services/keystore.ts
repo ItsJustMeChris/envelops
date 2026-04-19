@@ -4,7 +4,7 @@ import { getDb } from '../db/client'
 import { keypairs, memberships, type Keypair } from '../db/schema'
 import { encryptWithMaster, decryptWithMaster } from '../crypto/master-key'
 import { generateKeypair, isCompressedPublicKey } from '../crypto/keypair'
-import { primaryOrgForAccount } from './teams'
+import { personalOrgForAccount } from './teams'
 
 export interface KeypairResult {
   public_key: string
@@ -31,7 +31,7 @@ export async function fetchOrMintKeypair(input: {
     // matches the observed commercial behavior where the server always produces a usable keypair.
   }
 
-  const orgId = await primaryOrgForAccount(input.accountId)
+  const orgId = await personalOrgForAccount(input.accountId)
   const kp = generateKeypair()
   const enc = encryptWithMaster(kp.privateKey)
   await db.insert(keypairs).values({

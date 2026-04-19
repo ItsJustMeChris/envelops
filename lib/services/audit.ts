@@ -1,7 +1,9 @@
 import { desc, eq } from 'drizzle-orm'
 
 import { getDb } from '../db/client'
-import { auditEvents, type AuditEvent } from '../db/schema'
+import { accounts, auditEvents, type AuditEvent } from '../db/schema'
+
+export type AuditEventWithUser = AuditEvent & { username: string | null }
 
 export async function recordAudit(input: {
   orgId?: number | null
@@ -36,12 +38,17 @@ export async function recordAudit(input: {
   })
 }
 
-export async function listAuditForOrg(orgId: number, limit = 100): Promise<AuditEvent[]> {
+export async function listAuditForOrg(
+  orgId: number,
+  limit = 100
+): Promise<AuditEventWithUser[]> {
   const { db } = getDb()
-  return db
-    .select()
+  const rows = await db
+    .select({ event: auditEvents, username: accounts.username })
     .from(auditEvents)
+    .leftJoin(accounts, eq(accounts.id, auditEvents.accountId))
     .where(eq(auditEvents.orgId, orgId))
     .orderBy(desc(auditEvents.createdAt))
     .limit(limit)
+  return rows.map((r) => ({ ...r.event, username: r.username }))
 }

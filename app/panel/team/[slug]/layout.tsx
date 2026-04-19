@@ -29,6 +29,7 @@ export default async function TeamLayout({
         </div>
         <nav className="space-x-4">
           <Link href={`/panel/team/${slug}`}>keys</Link>
+          <Link href={`/panel/team/${slug}/projects`}>projects</Link>
           <Link href={`/panel/team/${slug}/secrets`}>secrets</Link>
           <Link href={`/panel/team/${slug}/members`}>members</Link>
           <Link href={`/panel/team/${slug}/rotations`}>rotations</Link>

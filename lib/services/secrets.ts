@@ -42,12 +42,14 @@ export async function setSecret(input: {
   return inserted[0]
 }
 
-export async function getSecretValue(uri: string): Promise<{ value: string; orgId: number } | null> {
+export async function getSecretValue(
+  uri: string
+): Promise<{ value: string; orgId: number; projectId: number | null } | null> {
   const { db } = getDb()
   const row = await db.query.secrets.findFirst({ where: eq(secrets.uri, uri) })
   if (!row) return null
   const plaintext = Buffer.from(decryptWithMaster(row.encryptedValue)).toString('utf8')
-  return { value: plaintext, orgId: row.orgId }
+  return { value: plaintext, orgId: row.orgId, projectId: row.projectId }
 }
 
 export async function listSecretsForOrg(orgId: number): Promise<Secret[]> {
