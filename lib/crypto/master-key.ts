@@ -18,10 +18,12 @@ function parse(raw: string): Uint8Array {
 function loadKey(): { id: string; key: Uint8Array } {
   const raw = process.env[ENV]
   if (!raw) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(`${ENV} must be set in production`)
+    // Require explicit opt-in for the deterministic dev key. Falling back on
+    // absence of NODE_ENV=production meant any deploy that forgot to set
+    // NODE_ENV would silently encrypt every secret under a public constant.
+    if (process.env.ENVELOPS_DEV_MODE !== '1') {
+      throw new Error(`${ENV} must be set (or set ENVELOPS_DEV_MODE=1 to use the insecure dev fallback)`)
     }
-    // Deterministic dev key, clearly marked. NEVER used in prod — guard above.
     const key = utf8ToBytes('dev-master-key-not-for-production!!'.padEnd(KEY_LEN, '!')).slice(0, KEY_LEN)
     return { id: 'dev', key }
   }
