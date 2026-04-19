@@ -8,6 +8,10 @@ Think of this as an open dialogue. If one of these choices is wrong for your tea
 
 ## 1. Private-key visibility is scoped to owners and admins
 
+The panel's Reveal button is gated to owners and admins. Members can no longer click-to-exfiltrate a private key from the browser; every CLI fetch is audit-logged.
+
+> "Under the commercial model, every invited member is one click away from walking off with any private key on the team."
+
 ### What `dotenvx-ops` (commercial) does
 
 Any member you invite to a team can see every keypair on the team from the web panel. They click **Reveal** on a private key, copy it out of the browser, and paste it into their local environment (for example `.env.keys`) so that `dotenvx run` can decrypt `.env.vault` / `.env` files.
