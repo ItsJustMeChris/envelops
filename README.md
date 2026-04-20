@@ -75,7 +75,7 @@ npm run test:e2e
 
 ## Architecture
 
-Single Next.js process. SQLite by default (one file, one volume, one backup). Private keys are wrapped with AES-256-GCM under a server master key — rotate the key by deploying a new `ENVELOPS_MASTER_KEY` and re-encrypting rows; old key id stays in the ciphertext prefix until the last row migrates.
+Single Next.js process. SQLite by default (one file, one volume, one backup). Private keys are wrapped with AES-256-GCM under a server master key.
 
 ## License
 
