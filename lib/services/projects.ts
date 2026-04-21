@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
 
 import { getDb } from '../db/client'
@@ -13,31 +13,6 @@ import { personalOrgForAccount } from './teams'
 
 function generateProjectId(): string {
   return `prj_${randomBytes(16).toString('hex')}`
-}
-
-/**
- * Look up or lazily-create the team-wide default project for an org. Any org that
- * doesn't yet have one gets one on demand. Keeps the migration story simple:
- * no backfill needed, we heal as we go.
- */
-export async function ensureDefaultProjectForOrg(orgId: number): Promise<Project> {
-  const { db } = getDb()
-  const existing = await db.query.projects.findFirst({
-    where: and(eq(projects.orgId, orgId), eq(projects.isDefault, true))
-  })
-  if (existing) return existing
-
-  const inserted = await db
-    .insert(projects)
-    .values({
-      orgId,
-      dotenvxProjectId: generateProjectId(),
-      name: 'default',
-      visibility: 'team',
-      isDefault: true
-    })
-    .returning()
-  return inserted[0]
 }
 
 export async function resolveOrCreateProject(input: {
@@ -63,16 +38,8 @@ export async function resolveOrCreateProject(input: {
     ? await orgIdForAccountBySlug(input.accountId, input.orgSlug)
     : await personalOrgForAccount(input.accountId)
 
-  // If caller supplied no dotenvxProjectId, route to the team's default team-wide
-  // project rather than minting a throwaway. Matches commercial behavior where the
-  // first sync writes `.env.x` pinning a stable id that future calls reuse.
   if (!input.dotenvxProjectId && !input.cwdName) {
-    const existingDefault = await db.query.projects.findFirst({
-      where: and(eq(projects.orgId, orgId), eq(projects.isDefault, true))
-    })
-    if (existingDefault) return existingDefault
-    await assertCanCreateProjectInOrg(input.accountId, orgId)
-    return ensureDefaultProjectForOrg(orgId)
+    throw new Error('resolveOrCreateProject: must supply dotenvxProjectId or cwdName')
   }
 
   // Reuse an existing project with the same cwd name in this org so a sync from a
@@ -190,7 +157,7 @@ export async function listProjectsForOrg(orgId: number): Promise<Project[]> {
     .select()
     .from(projects)
     .where(eq(projects.orgId, orgId))
-    .orderBy(desc(projects.isDefault), projects.createdAt)
+    .orderBy(projects.createdAt)
 }
 
 export async function listAccessibleProjectsForAccountInOrg(input: {

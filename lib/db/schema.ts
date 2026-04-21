@@ -115,15 +115,11 @@ export const projects = sqliteTable(
     // `team`       = any member of the org has access (the team-wide default)
     // `restricted` = only members listed in project_access (owners/admins override)
     visibility: text('visibility', { enum: ['team', 'restricted'] }).notNull().default('team'),
-    // Exactly one is_default=true per org — the auto-created team-wide project so
-    // a user can sync/encrypt without pre-creating anything.
-    isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false),
     createdBy: integer('created_by').references(() => accounts.id, { onDelete: 'set null' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now)
   },
   (t) => ({
     byOrg: index('projects_org_idx').on(t.orgId),
-    byOrgDefault: index('projects_org_default_idx').on(t.orgId, t.isDefault),
     // Names are unique per-org (null allowed multiple times, which is standard SQLite
     // behavior — id-only rows never minted by the UI don't collide).
     byOrgName: uniqueIndex('projects_org_name_idx').on(t.orgId, t.name),

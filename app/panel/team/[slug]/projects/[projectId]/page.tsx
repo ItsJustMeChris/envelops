@@ -17,6 +17,7 @@ import { getMemberRole, listMembers, requireOwnerOrAdmin } from '@/lib/services/
 import { getDb } from '@/lib/db/client'
 import { projects as projectsTable } from '@/lib/db/schema'
 import { TerminalSelect } from '@/app/components/terminal-select'
+import { Terminal } from '@/app/components/terminal'
 import { FlashToasts } from '@/app/components/flash-toasts'
 
 export const dynamic = 'force-dynamic'
@@ -188,7 +189,6 @@ export default async function ProjectDetailPage({
           <dt className="text-dim">visibility</dt>
           <dd className={project.visibility === 'team' ? 'text-fg' : 'text-accent'}>
             {project.visibility}
-            {project.isDefault ? <span className="text-dim ml-2">(default)</span> : null}
           </dd>
           <dt className="text-dim">created</dt>
           <dd>{project.createdAt.toISOString().slice(0, 10)}</dd>
@@ -202,6 +202,19 @@ export default async function ProjectDetailPage({
           this project.
         </p>
         <pre className="border border-rule px-3 sm:px-4 py-3 overflow-x-auto whitespace-pre-wrap break-all text-xs sm:text-sm"><code><span className="text-dim">{envXComment}</span>{'\n'}DOTENVX_PROJECT_ID=<span className="text-accent">{project.dotenvxProjectId}</span></code></pre>
+      </section>
+
+      <section>
+        <h3 className="mb-2">sync</h3>
+        <p className="text-dim text-xs mb-3">
+          from any directory with that <code>.env.x</code>, run <code>dotenvx-ops sync</code> to
+          push local file updates to this project or pull the latest versions down.
+        </p>
+        <Terminal title="dotenvx-ops sync">
+          <span className="text-dim">$ </span>cd <span className="text-accent">~/code/{projectDisplayName(project)}</span>
+          {'\n'}
+          <span className="text-dim">$ </span>dotenvx-ops sync
+        </Terminal>
       </section>
 
       {manageable ? (

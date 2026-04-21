@@ -17,8 +17,7 @@ import {
   createProject,
   addProjectMember,
   assertCanAccessProject,
-  canAccessProject,
-  ensureDefaultProjectForOrg
+  canAccessProject
 } from '../lib/services/projects'
 import { acceptInviteByAccount, canInviteWithRole, createInvite } from '../lib/services/invites'
 import { memberships, tokens as tokensTable, devices, organizations } from '../lib/db/schema'
@@ -199,14 +198,6 @@ describe('projects: team-wide vs restricted access control', () => {
       // Grant explicit access and re-check.
       await addProjectMember({ projectId: restricted!.id, accountId: memberId })
       expect(await canAccessProject(memberId, restricted!)).toBe(true)
-    })
-
-    it('ensureDefaultProjectForOrg is idempotent', async () => {
-      const a = await ensureDefaultProjectForOrg(orgId)
-      const b = await ensureDefaultProjectForOrg(orgId)
-      expect(a.id).toBe(b.id)
-      expect(a.isDefault).toBe(true)
-      expect(a.visibility).toBe('team')
     })
 
     it('throws forbidden with descriptive message for non-member org', async () => {

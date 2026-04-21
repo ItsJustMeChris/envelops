@@ -95,3 +95,30 @@ a:hover { color: var(--color-accent); }
    while keeping the area scrollable. Firefox + WebKit only. */
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Terminal window chrome used to frame CLI command examples. Matches the
+   cream-on-black ops aesthetic from the marketing site. */
+.term {
+  border: 1px solid var(--color-rule);
+  background: color-mix(in srgb, var(--color-bg) 92%, black);
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+}
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.7ch;
+  padding: 0.45rem 0.8rem;
+  border-bottom: 1px solid var(--color-rule);
+  color: var(--color-dim);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 9999px;
+  background: var(--color-rule);
+  display: inline-block;
+}
+.dot-live { background: var(--color-accent); box-shadow: 0 0 10px var(--color-accent); }

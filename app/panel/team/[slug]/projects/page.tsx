@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { currentAccount } from '@/lib/services/panel-auth'
 import { resolveTeamForAccount } from '@/lib/services/team-scope'
+import { listAccountOrganizations } from '@/lib/services/accounts'
 import {
   createProject,
   listAccessibleProjectsForAccountInOrg,
@@ -11,6 +12,7 @@ import {
   ProjectNameConflictError
 } from '@/lib/services/projects'
 import { TerminalSelect } from '@/app/components/terminal-select'
+import { Terminal } from '@/app/components/terminal'
 import { FlashToasts } from '@/app/components/flash-toasts'
 
 export const dynamic = 'force-dynamic'
@@ -65,6 +67,18 @@ export default async function ProjectsPage({
     orgId: team.org.id
   })
 
+  // Emulate the `dotenvx-ops backup` org-picker TUI below the create form. We
+  // sort the personal org first (matching the CLI's convention) and put a cursor
+  // on whichever org the user is currently viewing so the hint reads as "pick
+  // this one".
+  const allOrgs = await listAccountOrganizations(account.id)
+  const personalSlug = account.username
+  const backupOrgs = [...allOrgs].sort((a, b) => {
+    if (a.slug === personalSlug) return -1
+    if (b.slug === personalSlug) return 1
+    return a.slug.localeCompare(b.slug)
+  })
+
   return (
     <div className="space-y-8">
       <FlashToasts specs={[{ key: 'error', template: '✘ {value}', tone: 'error' }]} />
@@ -85,7 +99,6 @@ export default async function ProjectsPage({
                   className="text-accent truncate min-w-0"
                 >
                   {projectDisplayName(p)}
-                  {p.isDefault ? <span className="text-dim ml-2">(default)</span> : null}
                 </Link>
                 <div className="col-start-2 flex gap-3 text-xs text-dim sm:contents">
                   <span className={`sm:text-sm ${p.visibility === 'team' ? 'sm:text-dim' : 'sm:text-accent'}`}>
@@ -128,6 +141,37 @@ export default async function ProjectsPage({
             team-wide projects are accessible to every member. restricted projects require
             explicit access per account (owners/admins always have access).
           </p>
+          <p className="text-dim text-xs">
+            from inside a repo / project you can run <code>dotenvx-ops backup</code>
+            {backupOrgs.length > 1 ? ' and pick this team from the prompt' : ''}.
+          </p>
+          <Terminal title="dotenvx-ops backup">
+            <span className="text-dim">$ </span>cd <span className="text-accent">~/code/ios-app</span>
+            {'\n'}
+            <span className="text-dim">$ </span>dotenvx-ops backup
+            {backupOrgs.length > 1 ? (
+              <>
+                {'\n'}
+                <span className="text-accent">?</span> select team to back up to{' '}
+                <span className="text-dim">(↑/↓ to move, ⏎ to select)</span>
+                {'\n'}
+                {backupOrgs.map((o) => {
+                  const current = o.slug === team.org.slug
+                  return current ? (
+                    <span key={o.id}>
+                      <span className="text-accent">{'❯ '}{o.slug}</span>
+                      {'\n'}
+                    </span>
+                  ) : (
+                    <span key={o.id} className="text-dim">
+                      {'  '}{o.slug}
+                      {'\n'}
+                    </span>
+                  )
+                })}
+              </>
+            ) : null}
+          </Terminal>
         </form>
       </section>
     </div>
