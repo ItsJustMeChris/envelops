@@ -10,8 +10,9 @@ behavioral change a CLI sees is that some prior 403s are now 404s.
 - **New `envelops://<slug>/<key>` URI scheme for per-org secrets.** Any string
   is now a valid `dotenvx-ops set/get` target. Bare names (`LASTPASS_PASSWORD`)
   route to the caller's personal org; `envelops://<slug>/<key>` routes to that
-  team if the caller is a member. Namespaced keys (`stripe/prod/key`) are
-  preserved verbatim.
+  team if the caller is a member, otherwise `404 not_found` — we don't reveal
+  whether the team or the key exists. Namespaced keys (`stripe/prod/key`) are
+  preserved verbatim. See `DEVIATIONS.md` §2 for the rationale.
 - **404-leak-safe across the board.** `/api/set`, `/get`, `/keypair`, `/sync`,
   `/backup`, `/rotate`, `/rotate/connect`, `/panel/reveal`, and
   `/synchronization` now return `404 not_found` instead of `403 forbidden` (or
