@@ -238,15 +238,19 @@ export const secrets = sqliteTable(
     orgId: integer('org_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
-    projectId: integer('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    // `uri` is the caller's verbatim string (e.g. `foo`, `envelops://acme/foo`).
+    // Preserved for display/copy only — it is NOT a lookup key. `key` is the
+    // identifier scoped to `org_id` and is what every read/write resolves
+    // against; it's also what's shown in the panel list.
     uri: text('uri').notNull(),
+    key: text('key').notNull(),
     encryptedValue: text('encrypted_value').notNull(),
     masterKeyId: text('master_key_id').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(now)
   },
   (t) => ({
-    byUri: uniqueIndex('secrets_uri_idx').on(t.uri),
+    byOrgKey: uniqueIndex('secrets_org_key_idx').on(t.orgId, t.key),
     byOrg: index('secrets_org_idx').on(t.orgId)
   })
 )

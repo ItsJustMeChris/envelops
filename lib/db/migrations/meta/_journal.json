@@ -92,6 +92,13 @@
       "when": 1776733078163,
       "tag": "0012_drop_projects_is_default",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1776734838222,
+      "tag": "0013_add_secrets_key",
+      "breakpoints": true
     }
   ]
 }

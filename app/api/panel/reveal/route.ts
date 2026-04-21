@@ -35,9 +35,9 @@ export async function POST(req: Request) {
   const membership = await db.query.memberships.findFirst({
     where: and(eq(memberships.accountId, account.id), eq(memberships.orgId, row.orgId))
   })
-  if (!membership) return apiError(403, 'forbidden')
+  if (!membership) return apiError(404, 'not_found')
   if (membership.role !== 'owner' && membership.role !== 'admin') {
-    return apiError(403, 'forbidden', 'only team owners or admins can reveal private keys')
+    return apiError(404, 'not_found')
   }
 
   await recordAudit({

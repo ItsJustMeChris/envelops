@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { MAX_ENCODED_BYTES, readJsonWithLimit } from '@/lib/http/body'
-import { apiError, asForbidden, json } from '@/lib/http/responses'
+import { apiError, asAccessDenied, json } from '@/lib/http/responses'
 import { requireBearer, touchDevice } from '@/lib/services/cli-auth'
 import { recordSyncBackup, SyncPayloadError } from '@/lib/services/sync'
 import { recordAudit } from '@/lib/services/audit'
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   }
 
   if (id.device && id.device.publicKey !== parsed.device_public_key) {
-    return apiError(403, 'device_mismatch', 'device_public_key mismatch')
+    return apiError(404, 'not_found')
   }
 
   let result
@@ -58,8 +58,8 @@ export async function POST(req: Request) {
       kind: 'sync'
     })
   } catch (e) {
-    const forbidden = asForbidden(e)
-    if (forbidden) return forbidden
+    const denied = asAccessDenied(e)
+    if (denied) return denied
     if (e instanceof SyncPayloadError) return apiError(400, 'invalid_request', e.message)
     throw e
   }

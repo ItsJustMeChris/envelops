@@ -19,11 +19,12 @@ export function apiError(status: number, error: string, description?: string) {
 }
 
 /**
- * Turn a thrown `forbidden: ...` error from the service layer into a clean 403 response.
- * Anything else bubbles up so Next's error logging still sees real bugs.
+ * Turn a thrown `forbidden: ...` error from the service layer into a 404 response
+ * without echoing the descriptive message — we don't leak whether the underlying
+ * resource exists. Anything else bubbles up so Next's error logging still sees real bugs.
  */
-export function asForbidden(err: unknown): ReturnType<typeof apiError> | null {
+export function asAccessDenied(err: unknown): ReturnType<typeof apiError> | null {
   const msg = err instanceof Error ? err.message : String(err)
-  if (msg.startsWith('forbidden')) return apiError(403, 'forbidden', msg)
+  if (msg.startsWith('forbidden')) return apiError(404, 'not_found')
   return null
 }

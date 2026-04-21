@@ -1,20 +1,20 @@
 import { z } from 'zod'
-import { and, eq } from 'drizzle-orm'
 
 import { apiError } from '@/lib/http/responses'
 import { requireBearer, touchDevice } from '@/lib/services/cli-auth'
 import { getSecretValue } from '@/lib/services/secrets'
 import { recordAudit } from '@/lib/services/audit'
-import { assertCanAccessProject, getProjectById } from '@/lib/services/projects'
 import { resolveEnvUriForAccount } from '@/lib/services/sync'
-import { getDb } from '@/lib/db/client'
-import { memberships } from '@/lib/db/schema'
+import {
+  routeUriForAccount,
+  SecretRouteForbiddenError
+} from '@/lib/services/secret-routing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const Body = z.object({
-  uri: z.string().regex(/^dotenvx:\/\/[a-z0-9_]+_[0-9a-fA-F]+$/)
+  uri: z.string().min(1).regex(/^\S+$/)
 })
 
 export async function POST(req: Request) {
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   try {
     parsed = Body.parse(await req.json())
   } catch {
-    return apiError(400, 'invalid_request', 'uri must match dotenvx://<prefix>_<hex>')
+    return apiError(400, 'invalid_request', 'malformed body')
   }
 
   // env_<hex> URIs point at synced file contents. Returns the RAW content that
@@ -37,10 +37,7 @@ export async function POST(req: Request) {
       envUri: parsed.uri
     })
     if ('error' in result) {
-      if (result.error === 'not_found') {
-        return apiError(404, 'not_found', 'no file bound to that uri')
-      }
-      return apiError(403, 'forbidden', result.error)
+      return apiError(404, 'not_found')
     }
 
     await recordAudit({
@@ -62,26 +59,20 @@ export async function POST(req: Request) {
     })
   }
 
-  const secret = await getSecretValue(parsed.uri)
-  if (!secret) return apiError(404, 'not_found', 'no secret bound to that uri')
-
-  // Project-level access check. Secrets created before projects existed have a
-  // null project_id — fall back to requiring org membership for those.
-  if (secret.projectId) {
-    const project = await getProjectById(secret.projectId)
-    if (!project) return apiError(404, 'not_found', 'secret project missing')
-    try {
-      await assertCanAccessProject(id.account.id, project)
-    } catch (e) {
-      return apiError(403, 'forbidden', (e as Error).message)
+  // Same routing logic as /api/set — envelops://<slug>/<key> resolves to that
+  // org's secret, anything else reads from the caller's personal org.
+  let routed
+  try {
+    routed = await routeUriForAccount({ accountId: id.account.id, uri: parsed.uri })
+  } catch (e) {
+    if (e instanceof SecretRouteForbiddenError) {
+      return apiError(404, 'not_found')
     }
-  } else {
-    const { db } = getDb()
-    const membership = await db.query.memberships.findFirst({
-      where: and(eq(memberships.accountId, id.account.id), eq(memberships.orgId, secret.orgId))
-    })
-    if (!membership) return apiError(403, 'forbidden', 'caller is not a member of the owning org')
+    throw e
   }
+
+  const secret = await getSecretValue({ orgId: routed.orgId, key: routed.key })
+  if (!secret) return apiError(404, 'not_found')
 
   await recordAudit({
     orgId: secret.orgId,

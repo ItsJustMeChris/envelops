@@ -214,7 +214,7 @@ describe('security fixes', () => {
         memberToken.token
       )
     )
-    expect(denied.status).toBe(403)
+    expect(denied.status).toBe(404)
 
     const unknownProject = await app.rotateConnectRoute.POST(
       jsonRequest(

@@ -277,9 +277,10 @@ describe('projects: team-wide vs restricted access control', () => {
       expect(r.status).toBe(200)
       expect(await r.text()).toBe('team-wide-value')
 
-      // outsider is a member of a different team entirely → 403 (or 404-leak-safe)
+      // outsider is a member of a different team entirely → 404 (leak-safe:
+      // we don't tell them the team slug exists).
       r = await httpGet(outsiderToken.plaintext, teamWideUri)
-      expect(r.status).toBe(403)
+      expect(r.status).toBe(404)
     })
 
     it('restricted project: plain member is blocked from set and get until granted', async () => {
@@ -311,11 +312,12 @@ describe('projects: team-wide vs restricted access control', () => {
       )
       expect(r.status).toBe(200)
 
-      // Member tries to read: 403.
+      // Member tries to read: 404 (leak-safe — no hint that the restricted
+      // project exists).
       r = await httpGet(memberToken.plaintext, restrictedUri)
-      expect(r.status).toBe(403)
+      expect(r.status).toBe(404)
 
-      // Member tries to write to the restricted project: 403 during project resolution.
+      // Member tries to write to the restricted project: 404 during project resolution.
       r = await httpSet(
         memberToken.plaintext,
         memberToken.devicePubKey,
@@ -323,7 +325,7 @@ describe('projects: team-wide vs restricted access control', () => {
         'should-fail',
         restrictedProjectDotenvxId
       )
-      expect(r.status).toBe(403)
+      expect(r.status).toBe(404)
 
       // Grant the member explicit access. Now both set and get work.
       await addProjectMember({ projectId: restrictedProjectInternalId, accountId: memberId })
@@ -353,7 +355,7 @@ describe('projects: team-wide vs restricted access control', () => {
         outsiderToken.devicePubKey,
         restrictedProjectDotenvxId
       )
-      expect(r.status).toBe(403)
+      expect(r.status).toBe(404)
     })
 
     it('allows sync against a team-wide project for any member', async () => {
@@ -495,7 +497,7 @@ describe('projects: team-wide vs restricted access control', () => {
         },
         body: JSON.stringify({ uri: latest!.envUri })
       })
-      expect(g.status).toBe(403)
+      expect(g.status).toBe(404)
     })
 
     it('/api/get returns 404 for an unknown env_ URI', async () => {

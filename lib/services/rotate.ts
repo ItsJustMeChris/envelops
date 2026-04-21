@@ -24,7 +24,12 @@ export async function rotateByUri(input: {
   if (existing && existing.orgId !== input.orgId) throw new Error('forbidden: rotation belongs to another org')
 
   if (input.newValue != null) {
-    await setSecret({ orgId: input.orgId, uri: input.uri, value: input.newValue })
+    await setSecret({
+      orgId: input.orgId,
+      uri: input.uri,
+      key: input.uri,
+      value: input.newValue
+    })
   }
 
   const row = existing

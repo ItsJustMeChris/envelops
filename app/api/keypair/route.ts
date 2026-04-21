@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { apiError, asForbidden, json } from '@/lib/http/responses'
+import { apiError, asAccessDenied, json } from '@/lib/http/responses'
 import { requireBearer, touchDevice } from '@/lib/services/cli-auth'
 import { fetchOrMintKeypair } from '@/lib/services/keystore'
 import { recordAudit } from '@/lib/services/audit'
@@ -26,11 +26,7 @@ export async function POST(req: Request) {
   }
 
   if (id.device && id.device.publicKey !== parsed.device_public_key) {
-    return apiError(
-      403,
-      'device_mismatch',
-      'device_public_key does not match the device that minted this token'
-    )
+    return apiError(404, 'not_found')
   }
 
   let result
@@ -40,8 +36,8 @@ export async function POST(req: Request) {
       publicKey: parsed.public_key ?? null
     })
   } catch (e) {
-    const forbidden = asForbidden(e)
-    if (forbidden) return forbidden
+    const denied = asAccessDenied(e)
+    if (denied) return denied
     throw e
   }
 

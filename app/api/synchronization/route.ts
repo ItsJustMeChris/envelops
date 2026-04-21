@@ -27,8 +27,8 @@ export async function GET(req: Request) {
   if (!project) return json({ dotenvx_project_id: projectId, synced: false })
   try {
     await assertCanAccessProject(id.account.id, project)
-  } catch (e) {
-    return apiError(403, 'forbidden', (e as Error).message)
+  } catch {
+    return json({ dotenvx_project_id: projectId, synced: false })
   }
 
   const state = await latestSyncStateForProject(projectId)

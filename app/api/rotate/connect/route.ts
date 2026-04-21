@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 
 import { getDb } from '@/lib/db/client'
 import { projects } from '@/lib/db/schema'
-import { apiError, asForbidden, json } from '@/lib/http/responses'
+import { apiError, asAccessDenied, json } from '@/lib/http/responses'
 import { requireBearer, touchDevice } from '@/lib/services/cli-auth'
 import { createRotationReference, recordConnector } from '@/lib/services/rotate'
 import { assertCanAccessProject, resolveOrgForAccount } from '@/lib/services/projects'
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       const project = await db.query.projects.findFirst({
         where: eq(projects.dotenvxProjectId, parsed.dotenvx_project_id)
       })
-      if (!project) return apiError(404, 'not_found', 'project not found')
+      if (!project) return apiError(404, 'not_found')
       await assertCanAccessProject(id.account.id, project)
       if (parsed.org) {
         const scopedOrgId = await resolveOrgForAccount({
@@ -96,13 +96,13 @@ export async function POST(req: Request) {
       })
     }
   } catch (e) {
-    const forbidden = asForbidden(e)
-    if (forbidden) return forbidden
+    const denied = asAccessDenied(e)
+    if (denied) return denied
     throw e
   }
 
   const allowed = await requireOwnerOrAdmin({ accountId: id.account.id, orgId })
-  if (!allowed) return apiError(403, 'forbidden', 'owner or admin role required to manage rotation connectors')
+  if (!allowed) return apiError(404, 'not_found')
 
   const connector = await recordConnector({
     orgId,
