@@ -17,3 +17,14 @@ export async function resolveTeamForAccount(input: {
   if (!row[0]) return null
   return { org: row[0].org, role: row[0].role }
 }
+
+export function isAdminRole(role: string): boolean {
+  return role === 'owner' || role === 'admin'
+}
+
+// Route every panel render of a public key through this guard, even inside
+// views that are already role-gated, so an accidentally-leaked path still
+// truncates for non-admins.
+export function roleBasedPublicKey(fullKey: string, role: string): string {
+  return isAdminRole(role) ? fullKey : `${fullKey.slice(0, 10)}…`
+}

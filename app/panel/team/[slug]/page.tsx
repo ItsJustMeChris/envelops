@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { currentAccount } from '@/lib/services/panel-auth'
-import { resolveTeamForAccount } from '@/lib/services/team-scope'
+import { isAdminRole, resolveTeamForAccount, roleBasedPublicKey } from '@/lib/services/team-scope'
 import { listKeypairsForOrg } from '@/lib/services/keystore'
 import { KeyRow } from './key-row'
 
@@ -14,13 +14,14 @@ export default async function KeysPage({ params }: { params: Promise<{ slug: str
   const team = await resolveTeamForAccount({ accountId: account.id, slug })
   if (!team) notFound()
   const keys = await listKeypairsForOrg(team.org.id)
-  const canReveal = team.role === 'owner' || team.role === 'admin'
+  const canReveal = isAdminRole(team.role)
   // Members only ever see the first 5 bytes of a public key in the panel. The full key
   // is what the CLI `/api/keypair` endpoint matches on, so withholding it means a member
   // can't bounce off the web UI to walk a keypair they don't already have via a project file.
-  const displayKeys = canReveal
-    ? keys
-    : keys.map((k) => ({ ...k, publicKey: k.publicKey.slice(0, 10) }))
+  const displayKeys = keys.map((k) => ({
+    ...k,
+    publicKey: roleBasedPublicKey(k.publicKey, team.role)
+  }))
 
   if (displayKeys.length === 0) {
     return (

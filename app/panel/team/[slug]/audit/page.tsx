@@ -1,10 +1,29 @@
 import { notFound } from 'next/navigation'
 
 import { currentAccount } from '@/lib/services/panel-auth'
-import { resolveTeamForAccount } from '@/lib/services/team-scope'
+import { isAdminRole, resolveTeamForAccount, roleBasedPublicKey } from '@/lib/services/team-scope'
 import { listAuditForOrg } from '@/lib/services/audit'
 
 export const dynamic = 'force-dynamic'
+
+function redactPayload(payload: Record<string, unknown> | null, role: string): unknown {
+  if (payload === null) return null
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(walk)
+    if (v && typeof v === 'object') {
+      const out: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+        out[k] =
+          (k === 'public_key' || k === 'publicKey') && typeof val === 'string'
+            ? roleBasedPublicKey(val, role)
+            : walk(val)
+      }
+      return out
+    }
+    return v
+  }
+  return walk(payload)
+}
 
 export default async function AuditPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -12,6 +31,7 @@ export default async function AuditPage({ params }: { params: Promise<{ slug: st
   if (!account) notFound()
   const team = await resolveTeamForAccount({ accountId: account.id, slug })
   if (!team) notFound()
+  if (!isAdminRole(team.role)) notFound()
   const events = await listAuditForOrg(team.org.id, 100)
 
   return (
@@ -40,7 +60,7 @@ export default async function AuditPage({ params }: { params: Promise<{ slug: st
                 {e.username ?? '—'}
               </span>
               <span className="text-dim text-xs md:text-sm md:order-4 col-span-2 md:col-span-1 break-all min-w-0">
-                {e.payload ? JSON.stringify(e.payload) : ''}
+                {e.payload ? JSON.stringify(redactPayload(e.payload, team.role)) : ''}
               </span>
             </li>
           ))}

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { currentAccount } from '@/lib/services/panel-auth'
-import { resolveTeamForAccount } from '@/lib/services/team-scope'
+import { isAdminRole, resolveTeamForAccount } from '@/lib/services/team-scope'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +33,9 @@ export default async function TeamLayout({
           <Link href={`/panel/team/${slug}/secrets`}>secrets</Link>
           <Link href={`/panel/team/${slug}/members`}>members</Link>
           <Link href={`/panel/team/${slug}/rotations`}>rotations</Link>
-          <Link href={`/panel/team/${slug}/audit`}>audit</Link>
+          {isAdminRole(team.role) ? (
+            <Link href={`/panel/team/${slug}/audit`}>audit</Link>
+          ) : null}
           <Link href={`/panel/team/${slug}/settings`}>settings</Link>
         </nav>
       </div>
